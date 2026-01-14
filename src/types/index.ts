@@ -51,9 +51,42 @@ export interface DayCapacity {
   capacity: number;
 }
 
+export type IssueType = 'pin_drop' | 'scoring' | 'interlock' | 'ball_return' | 'other';
+
+export type UserRole = 'admin' | 'manager' | 'mechanic' | 'pin_chaser' | 'front_desk' | 'user';
+
+export interface User {
+  id: string;
+  name: string;
+  pin: string; // 3-4 digit PIN
+  role: UserRole;
+  active: boolean;
+}
+
+export interface MachineIssue {
+  id: string;
+  machineId: string;
+  type: IssueType;
+  timestamp: string;
+  resolved: boolean;
+  notes?: string;
+}
+
 export interface AppSettings {
   closedDays: number[]; // 0-6
   dayCapacities: Record<number, number>; // day index -> max machines
   preferredDays: number[]; // 0-6
   spreadMethod: 'even' | 'packed';
+  issueThresholds: Record<IssueType, number>;
+}
+
+export interface PMTask {
+  id: string;
+  name: string;
+  months: number[];
+  method: 'oil' | 'grease' | 'inspect';
+  pdfRef?: {
+    file: 'service' | 'lubrication';
+    page: number;
+  };
 }

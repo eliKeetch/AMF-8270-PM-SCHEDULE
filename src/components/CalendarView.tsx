@@ -19,7 +19,11 @@ import { useMachines } from '@/hooks/useMachines';
 import { PM_SCHEDULE } from '@/data/schedule';
 import { ChevronLeft, ChevronRight, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-export const CalendarView: React.FC = () => {
+interface CalendarViewProps {
+  onMachineClick?: (machineId: string) => void;
+}
+
+export const CalendarView: React.FC<CalendarViewProps> = ({ onMachineClick }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const { scheduledTasks, regenerateSchedule, isLoaded: scheduleLoaded } = useSchedule();
   const { machines, isLoaded: machinesLoaded } = useMachines();
@@ -124,9 +128,10 @@ export const CalendarView: React.FC = () => {
                     const someMissed = mTasks.some(t => t.status === 'missed');
 
                     return (
-                      <div 
+                      <button 
                         key={mId} 
-                        className={`px-2 py-1.5 rounded-lg border text-[10px] font-bold flex items-center justify-between ${
+                        onClick={() => onMachineClick?.(mId)}
+                        className={`w-full text-left px-2 py-1.5 rounded-lg border text-[10px] font-bold flex items-center justify-between hover:scale-[1.02] active:scale-95 transition-all ${
                           allCompleted ? 'bg-green-50 border-green-100 text-green-700' :
                           someMissed ? 'bg-red-50 border-red-100 text-red-700 animate-pulse' :
                           'bg-blue-50/50 border-blue-100/50 text-blue-700'
@@ -134,7 +139,7 @@ export const CalendarView: React.FC = () => {
                       >
                         <span>Machine #{machine?.number}</span>
                         {allCompleted ? <CheckCircle2 size={10} /> : someMissed ? <AlertCircle size={10} /> : null}
-                      </div>
+                      </button>
                     );
                   })}
                   

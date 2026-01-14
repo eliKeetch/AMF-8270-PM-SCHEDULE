@@ -1,15 +1,18 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useSchedule } from '@/hooks/useSchedule';
 import { useMachines } from '@/hooks/useMachines';
 import { PM_SCHEDULE } from '@/data/schedule';
-import { CheckCircle2, Circle, Clock, ArrowRight, AlertCircle } from 'lucide-react';
+import { PMTask } from '@/types';
+import { CheckCircle2, Circle as CircleIcon, Clock, ArrowRight, AlertCircle, Droplets, Square } from 'lucide-react';
 import { format, isToday, parseISO } from 'date-fns';
+import { ManualModal } from '@/components/ManualModal';
 
 export const TodayTasks: React.FC = () => {
   const { scheduledTasks, updateTaskStatus, isLoaded: scheduleLoaded } = useSchedule();
   const { machines, isLoaded: machinesLoaded } = useMachines();
+  const [selectedTask, setSelectedTask] = useState<PMTask | null>(null);
 
   if (!scheduleLoaded || !machinesLoaded) return null;
 
@@ -66,16 +69,26 @@ export const TodayTasks: React.FC = () => {
                 <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
                   #{machine?.number}
                 </div>
-                <div>
-                  <h4 className={`font-bold text-sm ${isCompleted ? 'text-gray-400 line-through' : 'text-gray-900'}`}>
-                    {pmTask?.name}
-                  </h4>
+                <button 
+                  onClick={() => pmTask && setSelectedTask(pmTask)}
+                  className="text-left group"
+                >
+                  <div className="flex items-center gap-2">
+                    <h4 className={`font-bold text-sm ${isCompleted ? 'text-gray-400 line-through' : 'text-gray-900 group-hover:text-blue-600 transition-colors'}`}>
+                      {pmTask?.name}
+                    </h4>
+                    {pmTask && (
+                      <div className={pmTask.method === 'oil' ? 'text-blue-500' : 'text-orange-500'}>
+                        {pmTask.method === 'oil' ? <Droplets size={12} /> : <Square size={12} />}
+                      </div>
+                    )}
+                  </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span className={`text-[10px] font-black uppercase tracking-widest ${isCompleted ? 'text-green-500' : 'text-gray-400'}`}>
                       {isCompleted ? 'Completed' : 'Pending'}
                     </span>
                   </div>
-                </div>
+                </button>
               </div>
 
               <button
@@ -86,7 +99,7 @@ export const TodayTasks: React.FC = () => {
                     : 'text-gray-300 hover:text-blue-600 hover:bg-blue-50'
                 }`}
               >
-                {isCompleted ? <CheckCircle2 size={24} /> : <Circle size={24} />}
+                {isCompleted ? <CheckCircle2 size={24} /> : <CircleIcon size={24} />}
               </button>
             </div>
           );
@@ -101,6 +114,10 @@ export const TodayTasks: React.FC = () => {
           View All <ArrowRight size={12} />
         </button>
       </div>
+      
+      {selectedTask && (
+        <ManualModal task={selectedTask} onClose={() => setSelectedTask(null)} />
+      )}
     </div>
   );
 };

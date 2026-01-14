@@ -2,12 +2,39 @@
 
 import React from 'react';
 import { useSchedule } from '@/hooks/useSchedule';
-import { Save, Calendar, Clock, RotateCcw, ShieldAlert } from 'lucide-react';
+import { Save, Calendar, Clock, RotateCcw, ShieldAlert, AlertTriangle, Target, RotateCw, MoreHorizontal } from 'lucide-react';
+import { IssueType } from '@/types';
+import { BowlingPin } from './Icons';
 
 export const SettingsView: React.FC = () => {
   const { settings, updateSettings, isLoaded } = useSchedule();
 
   if (!isLoaded) return null;
+
+  const issueTypes: { type: IssueType; icon: any; label: string }[] = [
+    { type: 'pin_drop', icon: BowlingPin, label: 'Pin Drop' },
+    { type: 'scoring', icon: Target, label: 'Scoring' },
+    { type: 'interlock', icon: ShieldAlert, label: 'Interlock' },
+    { type: 'ball_return', icon: RotateCw, label: 'Ball Return' },
+    { type: 'other', icon: MoreHorizontal, label: 'Other' },
+  ];
+
+  const handleThresholdChange = (type: IssueType, value: number) => {
+    if (!settings) return;
+    updateSettings({
+      ...settings,
+      issueThresholds: {
+        ...(settings.issueThresholds || {
+          pin_drop: 5,
+          scoring: 3,
+          interlock: 2,
+          ball_return: 4,
+          other: 5,
+        }),
+        [type]: Math.max(1, value)
+      }
+    });
+  };
 
   const days = [
     { id: 0, name: 'Sunday' },
@@ -20,37 +47,42 @@ export const SettingsView: React.FC = () => {
   ];
 
   const handleToggleClosed = (dayId: number) => {
-    const isClosed = settings.closedDays.includes(dayId);
+    if (!settings) return;
+    const closedDays = settings.closedDays || [];
+    const isClosed = closedDays.includes(dayId);
     updateSettings({
       ...settings,
       closedDays: isClosed 
-        ? settings.closedDays.filter(d => d !== dayId)
-        : [...settings.closedDays, dayId]
+        ? closedDays.filter(d => d !== dayId)
+        : [...closedDays, dayId]
     });
   };
 
   const handleCapacityChange = (dayId: number, capacity: number) => {
+    if (!settings) return;
     updateSettings({
       ...settings,
       dayCapacities: {
-        ...settings.dayCapacities,
+        ...(settings.dayCapacities || {}),
         [dayId]: Math.max(0, capacity)
       }
     });
   };
 
   const handleTogglePreferred = (dayId: number) => {
-    const isPreferred = settings.preferredDays.includes(dayId);
+    if (!settings) return;
+    const preferredDays = settings.preferredDays || [];
+    const isPreferred = preferredDays.includes(dayId);
     updateSettings({
       ...settings,
       preferredDays: isPreferred 
-        ? settings.preferredDays.filter(d => d !== dayId)
-        : [...settings.preferredDays, dayId]
+        ? preferredDays.filter(d => d !== dayId)
+        : [...preferredDays, dayId]
     });
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
+    <div className="p-8 mx-auto">
       <div className="mb-10">
         <h2 className="text-3xl font-black text-gray-900 tracking-tight uppercase">Settings</h2>
         <p className="text-gray-500 font-medium">Configure scheduling logic and house rules</p>
@@ -68,9 +100,9 @@ export const SettingsView: React.FC = () => {
 
           <div className="grid gap-4">
             {days.map(day => {
-              const isClosed = settings.closedDays.includes(day.id);
-              const isPreferred = settings.preferredDays.includes(day.id);
-              const capacity = settings.dayCapacities[day.id] || 0;
+              const isClosed = settings?.closedDays?.includes(day.id) || false;
+              const isPreferred = settings?.preferredDays?.includes(day.id) || false;
+              const capacity = settings?.dayCapacities?.[day.id] || 0;
 
               return (
                 <div key={day.id} className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-2xl border transition-all ${isClosed ? 'bg-gray-50 border-gray-100 opacity-60' : 'bg-white border-gray-100 hover:border-blue-200 shadow-sm'}`}>
@@ -136,20 +168,76 @@ export const SettingsView: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <button 
-              onClick={() => updateSettings({ ...settings, spreadMethod: 'even' })}
-              className={`p-6 rounded-[2rem] border-2 text-left transition-all ${settings.spreadMethod === 'even' ? 'border-blue-600 bg-blue-50/50 shadow-xl shadow-blue-100' : 'border-gray-100 bg-white hover:border-gray-200'}`}
+              onClick={() => settings && updateSettings({ ...settings, spreadMethod: 'even' })}
+              className={`p-6 rounded-[2rem] border-2 text-left transition-all ${settings?.spreadMethod === 'even' ? 'border-blue-600 bg-blue-50/50 shadow-xl shadow-blue-100' : 'border-gray-100 bg-white hover:border-gray-200'}`}
             >
               <h4 className="font-black text-gray-900 uppercase tracking-tight mb-2">Even Spread</h4>
               <p className="text-xs text-gray-500 font-medium leading-relaxed">Distributes machines across the whole month. Keeps a steady pace and avoids burnout.</p>
             </button>
 
             <button 
-              onClick={() => updateSettings({ ...settings, spreadMethod: 'packed' })}
-              className={`p-6 rounded-[2rem] border-2 text-left transition-all ${settings.spreadMethod === 'packed' ? 'border-purple-600 bg-purple-50/50 shadow-xl shadow-purple-100' : 'border-gray-100 bg-white hover:border-gray-200'}`}
+              onClick={() => settings && updateSettings({ ...settings, spreadMethod: 'packed' })}
+              className={`p-6 rounded-[2rem] border-2 text-left transition-all ${settings?.spreadMethod === 'packed' ? 'border-purple-600 bg-purple-50/50 shadow-xl shadow-purple-100' : 'border-gray-100 bg-white hover:border-gray-200'}`}
             >
               <h4 className="font-black text-gray-900 uppercase tracking-tight mb-2">Capacity Packed</h4>
               <p className="text-xs text-gray-500 font-medium leading-relaxed">Fills your preferred days (e.g., Mon/Tue) to max capacity first. Gets PMs done as early in the month as possible.</p>
             </button>
+          </div>
+        </section>
+
+        {/* Issue Thresholds */}
+        <section className="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="bg-orange-100 p-2 rounded-xl text-orange-600">
+              <AlertTriangle size={20} />
+            </div>
+            <h3 className="text-lg font-black text-gray-900 uppercase tracking-tight">Issue Alert Thresholds</h3>
+          </div>
+
+          <p className="text-xs text-gray-500 font-medium mb-6 leading-relaxed">
+            Define how many reports of a specific issue type on a single machine will trigger a "High Frequency" alert in the intelligence summary.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {issueTypes.map(({ type, icon: Icon, label }) => {
+              const thresholds = settings?.issueThresholds || {
+                pin_drop: 5,
+                scoring: 3,
+                interlock: 2,
+                ball_return: 4,
+                other: 5,
+              };
+              const value = (thresholds as any)[type] || 5;
+
+              return (
+                <div key={type} className="bg-gray-50 border border-gray-100 p-4 rounded-2xl">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="text-gray-400">
+                      <Icon size={18} />
+                    </div>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">{label}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-black text-gray-900">Alert at:</span>
+                    <div className="flex items-center bg-white p-1 rounded-xl border border-gray-200">
+                      <button 
+                        onClick={() => handleThresholdChange(type, value - 1)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-all font-bold"
+                      >
+                        -
+                      </button>
+                      <span className="w-10 text-center font-black text-gray-900">{value}</span>
+                      <button 
+                        onClick={() => handleThresholdChange(type, value + 1)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-all font-bold"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
 

@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Large Manuals (exceed GitHub limit)
+files/8270-service-parts-manual.pdf
+public/files/8270-service-parts-manual.pdf
+
+# Database
+pinsetter.db
+pinsetter.db-shm
+pinsetter.db-wal

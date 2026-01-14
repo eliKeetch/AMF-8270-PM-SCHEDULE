@@ -2,15 +2,26 @@
 
 import React, { useState } from 'react';
 import { PM_SCHEDULE } from '@/data/schedule';
+import { PMTask } from '@/types';
 import { useMaintenance } from '@/hooks/useMaintenance';
 import { useMachines } from '@/hooks/useMachines';
-import { CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { CheckCircle2, Circle as CircleIcon, AlertCircle, Droplets, Square } from 'lucide-react';
 import { format } from 'date-fns';
+import { ManualModal } from '@/components/ManualModal';
 
-export const MaintenanceTable: React.FC = () => {
+interface MaintenanceTableProps {
+  initialMachineId?: string | null;
+  onMachineChange?: (id: string) => void;
+}
+
+export const MaintenanceTable: React.FC<MaintenanceTableProps> = ({ 
+  initialMachineId, 
+  onMachineChange 
+}) => {
   const { machines, isLoaded: machinesLoaded } = useMachines();
   const { isTaskCompleted, toggleTaskCompletion, isLoaded: recordsLoaded } = useMaintenance();
-  const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
+  const [localMachineId, setLocalMachineId] = useState<string | null>(initialMachineId || null);
+  const [selectedTask, setSelectedTask] = useState<PMTask | null>(null);
   
   const currentMonth = new Date().getMonth();
   const currentYear = new Date().getFullYear();
@@ -22,9 +33,15 @@ export const MaintenanceTable: React.FC = () => {
   if (!machinesLoaded || !recordsLoaded) return null;
 
   const activeMachines = machines.filter(m => m.status !== 'permanently_down').sort((a, b) => a.number - b.number);
-  const currentMachine = selectedMachineId 
-    ? activeMachines.find(m => m.id === selectedMachineId) 
-    : activeMachines[0];
+  const currentMachineId = initialMachineId || localMachineId || activeMachines[0]?.id;
+  const currentMachine = activeMachines.find(m => m.id === currentMachineId) || activeMachines[0];
+
+  const handleMachineChange = (id: string) => {
+    setLocalMachineId(id);
+    if (onMachineChange) {
+      onMachineChange(id);
+    }
+  };
 
   if (!currentMachine) {
     return <div className="p-6">No active machines available.</div>;
@@ -42,7 +59,7 @@ export const MaintenanceTable: React.FC = () => {
           <label className="font-medium text-sm">Machine:</label>
           <select 
             value={currentMachine.id} 
-            onChange={(e) => setSelectedMachineId(e.target.value)}
+            onChange={(e) => handleMachineChange(e.target.value)}
             className="border rounded-lg px-3 py-2 bg-white shadow-sm focus:ring-2 focus:ring-blue-500 outline-none"
           >
             {activeMachines.map(m => (
@@ -70,9 +87,19 @@ export const MaintenanceTable: React.FC = () => {
             </thead>
             <tbody>
               {PM_SCHEDULE.map((task) => (
-                <tr key={task.id} className="border-b hover:bg-gray-50 transition-colors">
+                <tr key={task.id} className="border-b hover:bg-gray-50 transition-colors group">
                   <td className="p-4 text-sm font-medium text-gray-800 sticky left-0 bg-white border-r shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
-                    {task.name}
+                    <div className="flex items-center justify-between">
+                      <button 
+                        onClick={() => setSelectedTask(task)}
+                        className="flex items-center gap-3 hover:text-blue-600 transition-colors text-left"
+                      >
+                        <div className={`p-1.5 rounded-lg border ${task.method === 'oil' ? 'bg-blue-50 text-blue-600 border-blue-100' : 'bg-orange-50 text-orange-600 border-orange-100'}`}>
+                          {task.method === 'oil' ? <Droplets size={14} /> : <Square size={14} />}
+                        </div>
+                        <span className="font-bold">{task.name}</span>
+                      </button>
+                    </div>
                   </td>
                   {months.map((_, monthIdx) => {
                     const isScheduled = task.months.includes(monthIdx);
@@ -93,7 +120,7 @@ export const MaintenanceTable: React.FC = () => {
                                 : 'text-gray-300 hover:text-blue-500 hover:bg-blue-50'
                             }`}
                           >
-                            {completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}
+                            {completed ? <CheckCircle2 size={20} /> : <CircleIcon size={20} />}
                           </button>
                         ) : (
                           <span className="text-gray-100 text-[10px]">—</span>
@@ -107,6 +134,10 @@ export const MaintenanceTable: React.FC = () => {
           </table>
         </div>
       </div>
+      
+      {selectedTask && (
+        <ManualModal task={selectedTask} onClose={() => setSelectedTask(null)} />
+      )}
     </div>
   );
 };

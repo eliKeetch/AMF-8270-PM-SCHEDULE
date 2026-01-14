@@ -19,8 +19,8 @@ export const NotificationCenter: React.FC = () => {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
-  const handleReschedule = (taskId: string, date: string) => {
-    const result = rescheduleTask(taskId, date);
+  const handleReschedule = async (taskId: string, date: string) => {
+    const result = await rescheduleTask(taskId, date);
     if (result.success) {
       setReschedulingId(null);
       // Mark notification as read or remove it? Let's just mark as read for now.
