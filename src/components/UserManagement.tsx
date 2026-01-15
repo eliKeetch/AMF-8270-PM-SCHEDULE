@@ -72,6 +72,7 @@ export const UserManagement: React.FC = () => {
               <input
                 type="password"
                 maxLength={4}
+                pattern="\d{4}"
                 value={newPin}
                 onChange={(e) => setNewPin(e.target.value)}
                 placeholder="****"
@@ -145,7 +146,17 @@ export const UserManagement: React.FC = () => {
                   >
                     {user.active ? 'Enabled' : 'Disabled'}
                   </button>
-                  <button className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 border-slate-100 text-slate-400 hover:bg-slate-50 transition-all">
+                  <button
+                    onClick={() => {
+                      const newPin = prompt('Enter new 4-digit PIN:');
+                      if (newPin && newPin.length === 4 && !isNaN(Number(newPin))) {
+                        updateUser(user.id, { pin: newPin });
+                      } else if (newPin) {
+                        alert('Invalid PIN. Must be 4 digits.');
+                      }
+                    }}
+                    className="flex-1 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest border-2 border-slate-100 text-slate-400 hover:bg-slate-50 transition-all"
+                  >
                     Reset PIN
                   </button>
                 </div>

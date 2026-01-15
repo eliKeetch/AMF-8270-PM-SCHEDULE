@@ -10,7 +10,7 @@ interface UserContextType {
   addUser: (name: string, pin: string, role: UserRole) => Promise<void>;
   updateUser: (id: string, updates: Partial<User>) => Promise<void>;
   deleteUser: (id: string) => Promise<void>;
-  validateLogin: (pin: string) => User | null;
+  validateLogin: (pin: string, userId?: string) => User | null;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -78,7 +78,10 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const validateLogin = (pin: string): User | null => {
+  const validateLogin = (pin: string, userId?: string): User | null => {
+    if (userId) {
+      return users.find((u) => u.id === userId && u.pin === pin && u.active) || null;
+    }
     return users.find((u) => u.pin === pin && u.active) || null;
   };
 

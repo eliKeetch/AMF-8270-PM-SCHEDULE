@@ -3,16 +3,19 @@
 import React, { useState } from 'react';
 import { useUsers } from '@/hooks/useUsers';
 import { User } from '@/types';
-import { Lock, Delete, ChevronRight, AlertCircle } from 'lucide-react';
+import { Lock, Delete, ChevronRight, AlertCircle, User as UserIcon, ShieldCheck, Wrench, Store, ArrowLeft } from 'lucide-react';
 
 interface LoginViewProps {
   onLogin: (user: User) => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
-  const { validateLogin, isLoaded } = useUsers();
+  const { users, validateLogin, isLoaded } = useUsers();
+
+  const activeUsers = users.filter(u => u.active);
 
   const handleNumberClick = (num: string) => {
     if (pin.length < 4) {
@@ -27,7 +30,8 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
   };
 
   const handleLogin = () => {
-    const user = validateLogin(pin);
+    if (!selectedUser) return;
+    const user = validateLogin(pin, selectedUser.id);
     if (user) {
       onLogin(user);
     } else {
@@ -36,11 +40,32 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
     }
   };
 
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'admin': return <ShieldCheck size={20} />;
+      case 'manager': return <UserIcon size={20} />;
+      case 'mechanic': 
+      case 'pin_chaser': return <Wrench size={20} />;
+      case 'front_desk': return <Store size={20} />;
+      default: return <UserIcon size={20} />;
+    }
+  };
+
+  const getRoleColor = (role: string) => {
+    switch (role) {
+      case 'admin': return 'text-red-400 bg-red-400/10';
+      case 'manager': return 'text-purple-400 bg-purple-400/10';
+      case 'mechanic': return 'text-blue-400 bg-blue-400/10';
+      case 'front_desk': return 'text-green-400 bg-green-400/10';
+      default: return 'text-slate-400 bg-slate-400/10';
+    }
+  };
+
   if (!isLoaded) return null;
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="max-w-4xl w-full">
         <div className="text-center mb-12">
           <div className="bg-blue-600 w-20 h-20 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-500/20 rotate-3">
             <Lock className="text-white" size={40} />
@@ -49,64 +74,106 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
           <p className="text-slate-400 font-medium tracking-widest uppercase text-[10px]">Maintenance Access Control</p>
         </div>
 
-        <div className="bg-slate-800 rounded-[3rem] p-10 border border-slate-700 shadow-2xl">
-          <div className="flex justify-center gap-4 mb-10">
-            {[...Array(4)].map((_, i) => (
-              <div
-                key={i}
-                className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${
-                  pin.length > i 
-                    ? 'bg-blue-500 border-blue-500 scale-125' 
-                    : error 
-                      ? 'border-red-500 bg-red-500/20' 
-                      : 'border-slate-600 bg-slate-700'
-                }`}
-              />
-            ))}
-          </div>
+        <div className="bg-slate-900 rounded-[3rem] p-1 border border-slate-800 shadow-2xl overflow-hidden">
+          {!selectedUser ? (
+            <div className="p-10">
+              <h2 className="text-xl font-black text-white uppercase tracking-tight mb-8 text-center">Select Personnel</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {activeUsers.map(user => (
+                  <button
+                    key={user.id}
+                    onClick={() => setSelectedUser(user)}
+                    className="p-6 rounded-[2rem] bg-slate-800 border border-slate-700 hover:border-blue-500 transition-all group flex flex-col items-center text-center hover:-translate-y-1 active:scale-95"
+                  >
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-all group-hover:scale-110 ${getRoleColor(user.role)}`}>
+                      {getRoleIcon(user.role)}
+                    </div>
+                    <span className="font-black text-white uppercase tracking-tight block truncate w-full">{user.name}</span>
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{user.role.replace('_', ' ')}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col md:flex-row min-h-[500px]">
+              {/* Left Side: Selected User Profile */}
+              <div className="w-full md:w-1/3 bg-slate-800/50 p-10 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-800">
+                <button 
+                  onClick={() => { setSelectedUser(null); setPin(''); setError(false); }}
+                  className="absolute top-6 left-6 text-slate-500 hover:text-white flex items-center gap-2 text-xs font-black uppercase tracking-widest transition-all"
+                >
+                  <ArrowLeft size={16} /> Back
+                </button>
+                
+                <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mb-6 shadow-xl ${getRoleColor(selectedUser.role)}`}>
+                  {React.cloneElement(getRoleIcon(selectedUser.role) as React.ReactElement, { size: 40 })}
+                </div>
+                <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none mb-2">{selectedUser.name}</h3>
+                <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">{selectedUser.role.replace('_', ' ')}</p>
+              </div>
 
-          {error && (
-            <div className="flex items-center gap-2 text-red-400 text-xs font-black uppercase tracking-widest mb-6 justify-center animate-shake">
-              <AlertCircle size={14} /> Invalid Access Pin
+              {/* Right Side: PIN Pad */}
+              <div className="w-full md:w-2/3 p-10">
+                <div className="flex justify-center gap-4 mb-10">
+                  {[...Array(4)].map((_, i) => (
+                    <div
+                      key={i}
+                      className={`w-4 h-4 rounded-full border-2 transition-all duration-300 ${
+                        pin.length > i 
+                          ? 'bg-blue-500 border-blue-500 scale-125' 
+                          : error 
+                            ? 'border-red-500 bg-red-500/20 animate-shake' 
+                            : 'border-slate-600 bg-slate-700'
+                      }`}
+                    />
+                  ))}
+                </div>
+
+                {error && (
+                  <div className="flex items-center gap-2 text-red-400 text-xs font-black uppercase tracking-widest mb-6 justify-center">
+                    <AlertCircle size={14} /> Invalid Access Pin
+                  </div>
+                )}
+
+                <div className="grid grid-cols-3 gap-4 max-w-xs mx-auto">
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                    <button
+                      key={num}
+                      onClick={() => handleNumberClick(num.toString())}
+                      className="h-16 rounded-2xl bg-slate-800 text-2xl font-black text-white hover:bg-slate-700 active:bg-blue-600 active:scale-90 transition-all border border-slate-700 shadow-sm"
+                    >
+                      {num}
+                    </button>
+                  ))}
+                  <button
+                    onClick={handleDelete}
+                    className="h-16 rounded-2xl bg-slate-800 flex items-center justify-center text-slate-400 hover:bg-slate-700 active:scale-90 transition-all border border-slate-700"
+                  >
+                    <Delete size={24} />
+                  </button>
+                  <button
+                    onClick={() => handleNumberClick('0')}
+                    className="h-16 rounded-2xl bg-slate-800 text-2xl font-black text-white hover:bg-slate-700 active:bg-blue-600 active:scale-90 transition-all border border-slate-700 shadow-sm"
+                  >
+                    0
+                  </button>
+                  <button
+                    onClick={handleLogin}
+                    disabled={pin.length < 3}
+                    className={`h-16 rounded-2xl flex items-center justify-center transition-all active:scale-90 border border-blue-500 shadow-lg shadow-blue-500/20 ${
+                      pin.length >= 3 ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-slate-900 text-slate-600 border-slate-800 grayscale'
+                    }`}
+                  >
+                    <ChevronRight size={32} />
+                  </button>
+                </div>
+              </div>
             </div>
           )}
-
-          <div className="grid grid-cols-3 gap-4">
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-              <button
-                key={num}
-                onClick={() => handleNumberClick(num.toString())}
-                className="h-20 rounded-2xl bg-slate-700 text-2xl font-black text-white hover:bg-slate-600 active:bg-blue-600 active:scale-90 transition-all border border-slate-600"
-              >
-                {num}
-              </button>
-            ))}
-            <button
-              onClick={handleDelete}
-              className="h-20 rounded-2xl bg-slate-700 flex items-center justify-center text-slate-400 hover:bg-slate-600 active:scale-90 transition-all border border-slate-600"
-            >
-              <Delete size={24} />
-            </button>
-            <button
-              onClick={() => handleNumberClick('0')}
-              className="h-20 rounded-2xl bg-slate-700 text-2xl font-black text-white hover:bg-slate-600 active:bg-blue-600 active:scale-90 transition-all border border-slate-600"
-            >
-              0
-            </button>
-            <button
-              onClick={handleLogin}
-              disabled={pin.length < 3}
-              className={`h-20 rounded-2xl flex items-center justify-center transition-all active:scale-90 border border-blue-500 shadow-lg shadow-blue-500/20 ${
-                pin.length >= 3 ? 'bg-blue-600 text-white hover:bg-blue-500' : 'bg-slate-800 text-slate-600 border-slate-700 grayscale'
-              }`}
-            >
-              <ChevronRight size={32} />
-            </button>
-          </div>
         </div>
 
-        <p className="text-center mt-10 text-slate-500 text-xs font-medium">
-          Authorized personnel only. Contact management for PIN assignment.
+        <p className="text-center mt-10 text-slate-600 text-[10px] font-black uppercase tracking-[0.2em]">
+          Authorized personnel only. Contact management for security credentials.
         </p>
       </div>
     </div>
