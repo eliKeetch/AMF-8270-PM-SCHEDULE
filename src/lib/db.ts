@@ -74,7 +74,31 @@ db.exec(`
     notes TEXT,
     FOREIGN KEY (machineId) REFERENCES machines(id)
   );
+
+  CREATE TABLE IF NOT EXISTS frame_logs (
+    id TEXT PRIMARY KEY,
+    date TEXT NOT NULL,
+    frameCount INTEGER NOT NULL,
+    notes TEXT
+  );
 `);
+
+// Add machine_issues table columns if they don't exist (Migration)
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(machine_issues)").all() as any[];
+  if (tableInfo.length > 0) {
+    const columns = tableInfo.map(c => c.name);
+    
+    if (!columns.includes('isStop')) {
+      db.prepare("ALTER TABLE machine_issues ADD COLUMN isStop INTEGER DEFAULT 0").run();
+    }
+    if (!columns.includes('stopType')) {
+      db.prepare("ALTER TABLE machine_issues ADD COLUMN stopType TEXT").run();
+    }
+  }
+} catch (e) {
+  console.error("Migration error (machine_issues):", e);
+}
 
 // Add settings table columns if they don't exist (Migration)
 try {

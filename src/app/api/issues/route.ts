@@ -7,7 +7,8 @@ export async function GET() {
     const issues = db.prepare('SELECT * FROM machine_issues ORDER BY timestamp DESC').all() as any[];
     return NextResponse.json(issues.map(i => ({
       ...i,
-      resolved: Boolean(i.resolved)
+      resolved: Boolean(i.resolved),
+      isStop: Boolean(i.isStop)
     })));
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch issues' }, { status: 500 });
@@ -18,15 +19,17 @@ export async function POST(request: Request) {
   try {
     const issue = await request.json() as MachineIssue;
     db.prepare(`
-      INSERT INTO machine_issues (id, machineId, type, timestamp, resolved, notes)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO machine_issues (id, machineId, type, timestamp, resolved, notes, isStop, stopType)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       issue.id,
       issue.machineId,
       issue.type,
       issue.timestamp,
       issue.resolved ? 1 : 0,
-      issue.notes || null
+      issue.notes || null,
+      issue.isStop ? 1 : 0,
+      issue.stopType || null
     );
     return NextResponse.json({ success: true });
   } catch (error) {

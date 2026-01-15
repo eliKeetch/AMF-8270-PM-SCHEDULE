@@ -6,6 +6,7 @@ import { ScheduleProvider } from "@/hooks/ScheduleContext";
 import { MaintenanceProvider } from "@/hooks/MaintenanceContext";
 import { IssueProvider } from "@/hooks/IssueContext";
 import { UserProvider } from "@/hooks/UserContext";
+import { FrameProvider } from "@/hooks/FrameContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,11 +37,13 @@ export default function RootLayout({
         <UserProvider>
           <MachineProvider>
             <IssueProvider>
-              <MaintenanceProvider>
-                <ScheduleProvider>
-                  {children}
-                </ScheduleProvider>
-              </MaintenanceProvider>
+              <FrameProvider>
+                <MaintenanceProvider>
+                  <ScheduleProvider>
+                    {children}
+                  </ScheduleProvider>
+                </MaintenanceProvider>
+              </FrameProvider>
             </IssueProvider>
           </MachineProvider>
         </UserProvider>

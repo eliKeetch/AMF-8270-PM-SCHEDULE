@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useMachines } from '@/hooks/useMachines';
 import { useIssues } from '@/hooks/useIssues';
-import { IssueType, Machine, MachineStatus } from '@/types';
+import { IssueType, Machine, MachineStatus, StopType } from '@/types';
 import { 
   AlertCircle, 
   CheckCircle2, 
@@ -13,7 +13,9 @@ import {
   ShieldAlert,
   RotateCcw,
   PlusCircle,
-  MoreHorizontal
+  MoreHorizontal,
+  Plus,
+  TriangleAlert
 } from 'lucide-react';
 import { BowlingPin } from './Icons';
 
@@ -25,9 +27,18 @@ const ISSUE_OPTIONS: { type: IssueType; label: string; icon: any; color: string 
   { type: 'other', label: 'Other Issue', icon: MoreHorizontal, color: 'bg-gray-100 text-gray-700' },
 ];
 
+const STOP_OPTIONS: { type: StopType; label: string; icon: any; color: string }[] = [
+  { type: 'pin_jam', label: 'Pin Jam', icon: BowlingPin, color: 'bg-red-100 text-red-700' },
+  { type: 'ball_return', label: 'Ball Return', icon: RotateCcw, color: 'bg-red-100 text-red-700' },
+  { type: 'subway_balls', label: 'Balls in Subway', icon: MoreHorizontal, color: 'bg-red-100 text-red-700' },
+  { type: 'interlock', label: 'Interlock', icon: ShieldAlert, color: 'bg-red-100 text-red-700' },
+  { type: 'other', label: 'Other Stop', icon: AlertCircle, color: 'bg-red-100 text-red-700' },
+];
+
 export const FrontDeskPortal: React.FC = () => {
   const { machines, updateMachineStatus, isLoaded: machinesLoaded } = useMachines();
   const { reportIssue, issues, isLoaded: issuesLoaded } = useIssues();
+  const [stopModal, setStopModal] = useState<{ machineId: string; number: number } | null>(null);
 
   if (!machinesLoaded || !issuesLoaded) {
     return (
@@ -36,6 +47,12 @@ export const FrontDeskPortal: React.FC = () => {
       </div>
     );
   }
+
+  const handleAddStop = (type: StopType) => {
+    if (!stopModal) return;
+    reportIssue(stopModal.machineId, 'other', 'Stop recorded from Front Desk', true, type);
+    setStopModal(null);
+  };
 
   const getStatusUI = (status: MachineStatus) => {
     switch (status) {
@@ -115,11 +132,20 @@ export const FrontDeskPortal: React.FC = () => {
                           {ui.label}
                         </div>
                       </div>
-                      {activeIssues.length > 0 && (
-                        <div className="bg-red-500 text-white w-9 h-9 rounded-xl flex items-center justify-center font-black animate-bounce shadow-xl shadow-red-200 text-base">
-                          {activeIssues.length}
-                        </div>
-                      )}
+                      <div className="flex flex-col gap-2 items-end">
+                        <button
+                          onClick={() => setStopModal({ machineId: machine.id, number: machine.number })}
+                          className="bg-red-600 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-red-200 flex items-center gap-1.5"
+                        >
+                          <TriangleAlert size={14} />
+                          ADD STOP
+                        </button>
+                        {activeIssues.length > 0 && (
+                          <div className="bg-slate-900 text-white w-9 h-9 rounded-xl flex items-center justify-center font-black animate-pulse shadow-xl text-base">
+                            {activeIssues.length}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     <div className="space-y-3 mt-6">
@@ -161,6 +187,51 @@ export const FrontDeskPortal: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Stop Selection Modal */}
+      {stopModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setStopModal(null)} />
+          <div className="relative bg-white rounded-[3rem] w-full max-w-lg p-10 shadow-2xl animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setStopModal(null)}
+              className="absolute top-8 right-8 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <XCircle size={32} />
+            </button>
+            
+            <div className="text-center mb-10">
+              <div className="bg-red-100 text-red-600 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+                <TriangleAlert size={40} />
+              </div>
+              <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Record Stop</h3>
+              <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mt-2">Machine #{stopModal.number}</p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              {STOP_OPTIONS.map((opt) => (
+                <button
+                  key={opt.type}
+                  onClick={() => handleAddStop(opt.type)}
+                  className={`flex items-center gap-6 p-6 rounded-[2rem] border-2 border-slate-100 hover:border-red-500 hover:bg-red-50 transition-all group group`}
+                >
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform ${opt.color}`}>
+                    <opt.icon size={28} />
+                  </div>
+                  <div className="text-left">
+                    <span className="text-lg font-black text-slate-900 uppercase tracking-tight block leading-none mb-1">{opt.label}</span>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Customer Interruption</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            <p className="text-center mt-10 text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+              This will be recorded in the FPS intelligence summary.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

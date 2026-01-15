@@ -40,14 +40,14 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
     }
   };
 
-  const getRoleIcon = (role: string) => {
+  const getRoleIcon = (role: string, size: number = 20) => {
     switch (role) {
-      case 'admin': return <ShieldCheck size={20} />;
-      case 'manager': return <UserIcon size={20} />;
+      case 'admin': return <ShieldCheck size={size} />;
+      case 'manager': return <UserIcon size={size} />;
       case 'mechanic': 
-      case 'pin_chaser': return <Wrench size={20} />;
-      case 'front_desk': return <Store size={20} />;
-      default: return <UserIcon size={20} />;
+      case 'pin_chaser': return <Wrench size={size} />;
+      case 'front_desk': return <Store size={size} />;
+      default: return <UserIcon size={size} />;
     }
   };
 
@@ -86,7 +86,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                     className="p-6 rounded-[2rem] bg-slate-800 border border-slate-700 hover:border-blue-500 transition-all group flex flex-col items-center text-center hover:-translate-y-1 active:scale-95"
                   >
                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 transition-all group-hover:scale-110 ${getRoleColor(user.role)}`}>
-                      {getRoleIcon(user.role)}
+                      {getRoleIcon(user.role, 20)}
                     </div>
                     <span className="font-black text-white uppercase tracking-tight block truncate w-full">{user.name}</span>
                     <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{user.role.replace('_', ' ')}</span>
@@ -106,7 +106,7 @@ export const LoginView: React.FC<LoginViewProps> = ({ onLogin }) => {
                 </button>
                 
                 <div className={`w-24 h-24 rounded-3xl flex items-center justify-center mb-6 shadow-xl ${getRoleColor(selectedUser.role)}`}>
-                  {React.cloneElement(getRoleIcon(selectedUser.role) as React.ReactElement, { size: 40 })}
+                  {getRoleIcon(selectedUser.role, 40)}
                 </div>
                 <h3 className="text-2xl font-black text-white uppercase tracking-tighter leading-none mb-2">{selectedUser.name}</h3>
                 <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em]">{selectedUser.role.replace('_', ' ')}</p>

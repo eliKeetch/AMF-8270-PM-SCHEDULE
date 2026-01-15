@@ -53,6 +53,8 @@ export interface DayCapacity {
 
 export type IssueType = 'pin_drop' | 'scoring' | 'interlock' | 'ball_return' | 'other';
 
+export type StopType = 'pin_jam' | 'ball_return' | 'subway_balls' | 'interlock' | 'other';
+
 export type UserRole = 'admin' | 'manager' | 'mechanic' | 'pin_chaser' | 'front_desk' | 'user';
 
 export interface User {
@@ -69,6 +71,15 @@ export interface MachineIssue {
   type: IssueType;
   timestamp: string;
   resolved: boolean;
+  notes?: string;
+  isStop?: boolean;
+  stopType?: StopType;
+}
+
+export interface FrameLog {
+  id: string;
+  date: string; // ISO date (YYYY-MM-DD)
+  frameCount: number;
   notes?: string;
 }
 

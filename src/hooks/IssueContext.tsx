@@ -1,13 +1,13 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { MachineIssue, IssueType } from '@/types';
+import { MachineIssue, IssueType, StopType } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
 interface IssueContextType {
   issues: MachineIssue[];
   isLoaded: boolean;
-  reportIssue: (machineId: string, type: IssueType, notes?: string) => Promise<void>;
+  reportIssue: (machineId: string, type: IssueType, notes?: string, isStop?: boolean, stopType?: StopType) => Promise<void>;
   resolveIssue: (issueId: string) => Promise<void>;
   deleteIssue: (issueId: string) => Promise<void>;
   getMachineIssueStats: (machineId: string) => Record<IssueType, number>;
@@ -35,7 +35,7 @@ export const IssueProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     fetchIssues();
   }, [fetchIssues]);
 
-  const reportIssue = async (machineId: string, type: IssueType, notes?: string) => {
+  const reportIssue = async (machineId: string, type: IssueType, notes?: string, isStop?: boolean, stopType?: StopType) => {
     const newIssue: MachineIssue = {
       id: uuidv4(),
       machineId,
@@ -43,6 +43,8 @@ export const IssueProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       timestamp: new Date().toISOString(),
       resolved: false,
       notes,
+      isStop,
+      stopType
     };
     
     setIssues(prev => [newIssue, ...prev]);
