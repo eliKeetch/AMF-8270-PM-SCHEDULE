@@ -25,33 +25,33 @@ export const MachineGrid: React.FC = () => {
     switch (status) {
       case 'active':
         return {
-          bg: 'bg-green-50',
-          border: 'border-green-200',
-          text: 'text-green-700',
+          bg: 'bg-green-50 dark:bg-green-900/10',
+          border: 'border-green-200 dark:border-green-800/50',
+          text: 'text-green-700 dark:text-green-400',
           icon: <CheckCircle2 size={16} className="text-green-500" />,
           label: 'Operational'
         };
       case 'maintenance':
         return {
-          bg: 'bg-yellow-50',
-          border: 'border-yellow-200',
-          text: 'text-yellow-700',
+          bg: 'bg-yellow-50 dark:bg-yellow-900/10',
+          border: 'border-yellow-200 dark:border-yellow-800/50',
+          text: 'text-yellow-700 dark:text-yellow-400',
           icon: <Clock size={16} className="text-yellow-500" />,
           label: 'Service'
         };
       case 'down':
         return {
-          bg: 'bg-red-50',
-          border: 'border-red-200',
-          text: 'text-red-700',
+          bg: 'bg-red-50 dark:bg-red-900/10',
+          border: 'border-red-200 dark:border-red-800/50',
+          text: 'text-red-700 dark:text-red-400',
           icon: <AlertCircle size={16} className="text-red-500" />,
           label: 'Down'
         };
       case 'permanently_down':
         return {
-          bg: 'bg-gray-100',
-          border: 'border-gray-200',
-          text: 'text-gray-500',
+          bg: 'bg-gray-100 dark:bg-slate-800',
+          border: 'border-gray-200 dark:border-slate-700',
+          text: 'text-gray-500 dark:text-gray-400',
           icon: <AlertCircle size={16} className="text-gray-400" />,
           label: 'Parts Only'
         };
@@ -81,33 +81,33 @@ export const MachineGrid: React.FC = () => {
     <div className="p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
         <div>
-          <h2 className="text-4xl font-black text-gray-900 tracking-tight">Pinsetters</h2>
-          <p className="text-gray-500 mt-1 font-medium italic">Real-time machine status and upcoming service</p>
+          <h2 className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">Pinsetters</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-1 font-medium italic">Real-time machine status and upcoming service</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
         {pairs.map((pair, pairIdx) => (
-          <div key={pairIdx} className="bg-white border border-gray-100 rounded-[2.5rem] p-8 shadow-sm">
+          <div key={pairIdx} className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-[2.5rem] p-8 shadow-sm shadow-black/5 dark:shadow-none">
             <div className="flex justify-between items-center mb-8 px-2">
               <div className="flex items-center gap-4">
-                <span className="text-sm font-black text-gray-900 uppercase tracking-[0.2em]">
+                <span className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.2em]">
                   Pair {pairIdx + 1}
                 </span>
-                <span className="text-xs font-bold text-gray-400">
+                <span className="text-xs font-bold text-gray-400 dark:text-gray-500">
                   Machines {pair.map(m => `#${m.number}`).join(' & ')}
                 </span>
               </div>
               <div className="flex gap-2">
                 <button 
                   onClick={() => handleUpdatePairStatus(pair, 'active')}
-                  className="text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl bg-green-50 text-green-700 border border-green-100 hover:bg-green-100 transition-all active:scale-95"
+                  className="text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/30 transition-all active:scale-95 shadow-sm shadow-black/5 dark:shadow-none"
                 >
                   Set Open
                 </button>
                 <button 
                   onClick={() => handleUpdatePairStatus(pair, 'down')}
-                  className="text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl bg-red-50 text-red-700 border border-red-100 hover:bg-red-100 transition-all active:scale-95"
+                  className="text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all active:scale-95 shadow-sm shadow-black/5 dark:shadow-none"
                 >
                   Shut Down
                 </button>
@@ -123,14 +123,14 @@ export const MachineGrid: React.FC = () => {
                 return (
                   <div
                     key={machine.id}
-                    className={`relative flex flex-col border-2 rounded-[2rem] transition-all duration-300 ${ui.border} bg-white hover:shadow-xl hover:-translate-y-0.5 overflow-hidden`}
+                    className={`relative flex flex-col border-2 rounded-[2rem] transition-all duration-300 ${ui.border} bg-white dark:bg-slate-900 hover:shadow-xl dark:hover:shadow-black/20 hover:-translate-y-0.5 overflow-hidden shadow-sm shadow-black/5 dark:shadow-none`}
                   >
                     <div className="p-6">
                       <div className="flex justify-between items-start mb-6">
                         <div>
-                          <span className="text-5xl font-black text-gray-900 tracking-tighter leading-none block mb-2">#{machine.number}</span>
+                          <span className="text-5xl font-black text-gray-900 dark:text-white tracking-tighter leading-none block mb-2">#{machine.number}</span>
                           <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${ui.bg} ${ui.text} border ${ui.border}`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${ui.bg.replace('50', '500')}`} />
+                            <div className={`w-1.5 h-1.5 rounded-full ${ui.bg.includes('green') ? 'bg-green-500' : ui.bg.includes('yellow') ? 'bg-yellow-500' : ui.bg.includes('red') ? 'bg-red-500' : 'bg-gray-500'}`} />
                             {ui.label}
                           </div>
                         </div>
@@ -138,12 +138,12 @@ export const MachineGrid: React.FC = () => {
 
                       <div className="space-y-6">
                         <div className="relative group">
-                          <label className="text-[9px] font-black text-gray-400 uppercase tracking-[0.15em] mb-2 block ml-1">Update Status</label>
+                          <label className="text-[9px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.15em] mb-2 block ml-1">Update Status</label>
                           <div className="relative">
                             <select
                               value={machine.status}
                               onChange={(e) => updateMachineStatus(machine.id, e.target.value as MachineStatus)}
-                              className="w-full bg-gray-50/50 border border-gray-100 rounded-2xl px-4 py-3 text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20 appearance-none cursor-pointer hover:bg-gray-50 transition-colors"
+                              className="w-full bg-gray-50/50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 appearance-none cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                             >
                               <option value="active">Operational</option>
                               <option value="maintenance">Service</option>
@@ -154,11 +154,11 @@ export const MachineGrid: React.FC = () => {
                           </div>
                         </div>
 
-                        <div className={`p-4 rounded-2xl border-2 ${isPMToday ? 'bg-blue-50/50 border-blue-100' : 'bg-gray-50/30 border-gray-100'}`}>
+                        <div className={`p-4 rounded-2xl border-2 ${isPMToday ? 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900/30' : 'bg-gray-50/30 dark:bg-slate-800/50 border-gray-100 dark:border-slate-700'}`}>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <Calendar size={14} className={isPMToday ? 'text-blue-500' : 'text-gray-400'} />
-                              <span className={`text-[9px] font-black uppercase tracking-widest ${isPMToday ? 'text-blue-600' : 'text-gray-500'}`}>
+                              <span className={`text-[9px] font-black uppercase tracking-widest ${isPMToday ? 'text-blue-600' : 'text-gray-500 dark:text-gray-400'}`}>
                                 Next Scheduled PM
                               </span>
                             </div>
@@ -168,7 +168,7 @@ export const MachineGrid: React.FC = () => {
                               </span>
                             )}
                           </div>
-                          <div className={`text-xl font-black ${isPMToday ? 'text-blue-700' : 'text-gray-900'}`}>
+                          <div className={`text-xl font-black ${isPMToday ? 'text-blue-700 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>
                             {nextPM ? format(parseISO(nextPM), 'MMMM dd, yyyy') : 'No Service Scheduled'}
                           </div>
                         </div>
@@ -176,8 +176,8 @@ export const MachineGrid: React.FC = () => {
                     </div>
 
                     {machine.status === 'permanently_down' && (
-                      <div className="absolute inset-0 bg-white/80 backdrop-blur-[2px] flex items-center justify-center">
-                        <div className="bg-gray-900 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-[0.2em] -rotate-12 border-4 border-white shadow-2xl">
+                      <div className="absolute inset-0 bg-white/80 dark:bg-slate-900/80 backdrop-blur-[2px] flex items-center justify-center">
+                        <div className="bg-gray-900 dark:bg-slate-950 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-[0.2em] -rotate-12 border-4 border-white dark:border-slate-800 shadow-2xl shadow-black/20">
                           Offline / Parts
                         </div>
                       </div>

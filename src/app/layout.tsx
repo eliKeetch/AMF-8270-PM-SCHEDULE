@@ -7,6 +7,7 @@ import { MaintenanceProvider } from "@/hooks/MaintenanceContext";
 import { IssueProvider } from "@/hooks/IssueContext";
 import { UserProvider } from "@/hooks/UserContext";
 import { FrameProvider } from "@/hooks/FrameContext";
+import { ThemeProvider } from "@/hooks/ThemeContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -34,19 +35,21 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
         suppressHydrationWarning
       >
-        <UserProvider>
-          <MachineProvider>
-            <IssueProvider>
-              <FrameProvider>
-                <MaintenanceProvider>
-                  <ScheduleProvider>
-                    {children}
-                  </ScheduleProvider>
-                </MaintenanceProvider>
-              </FrameProvider>
-            </IssueProvider>
-          </MachineProvider>
-        </UserProvider>
+        <ThemeProvider>
+          <UserProvider>
+            <MachineProvider>
+              <IssueProvider>
+                <FrameProvider>
+                  <MaintenanceProvider>
+                    <ScheduleProvider>
+                      {children}
+                    </ScheduleProvider>
+                  </MaintenanceProvider>
+                </FrameProvider>
+              </IssueProvider>
+            </MachineProvider>
+          </UserProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -25,23 +25,23 @@ export const TodayTasks: React.FC = () => {
 
   if (todayTasks.length === 0) {
     return (
-      <div className="p-6 bg-white rounded-2xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center">
-        <div className="bg-gray-50 p-4 rounded-full mb-4">
-          <Clock size={32} className="text-gray-400" />
+      <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border-2 border-dashed border-gray-200 dark:border-slate-800 flex flex-col items-center justify-center text-center">
+        <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-full mb-4">
+          <Clock size={32} className="text-gray-400 dark:text-gray-500" />
         </div>
-        <h3 className="text-lg font-bold text-gray-900">No tasks scheduled for today</h3>
-        <p className="text-gray-500 max-w-xs mx-auto mt-1">Enjoy the breather! Friday and Saturday are busy, use this time for any unplanned repairs.</p>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white">No tasks scheduled for today</h3>
+        <p className="text-gray-500 dark:text-gray-400 max-w-xs mx-auto mt-1">Enjoy the breather! Friday and Saturday are busy, use this time for any unplanned repairs.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-2xl border-2 border-blue-100 overflow-hidden shadow-sm">
+    <div className="bg-white dark:bg-slate-900 rounded-2xl border-2 border-blue-100 dark:border-blue-900/30 overflow-hidden shadow-sm shadow-black/5 dark:shadow-none">
       <div className="bg-blue-600 p-6 text-white">
         <div className="flex justify-between items-center mb-4">
           <div>
             <h3 className="text-xl font-black tracking-tight uppercase">Today's Workload</h3>
-            <p className="text-blue-100 text-sm font-medium">{format(new Date(), 'EEEE, MMMM do')}</p>
+            <p className="text-blue-100 dark:text-blue-200 text-sm font-medium">{format(new Date(), 'EEEE, MMMM do')}</p>
           </div>
           <div className="text-right">
             <span className="text-3xl font-black leading-none">{completedCount}/{todayTasks.length}</span>
@@ -57,16 +57,16 @@ export const TodayTasks: React.FC = () => {
         </div>
       </div>
 
-      <div className="divide-y divide-gray-100 max-h-[400px] overflow-y-auto">
+      <div className="divide-y divide-gray-100 dark:divide-slate-800 max-h-[400px] overflow-y-auto">
         {todayTasks.map((task) => {
           const machine = machines.find(m => m.id === task.machineId);
           const pmTask = PM_SCHEDULE.find(pt => pt.id === task.taskId);
           const isCompleted = task.status === 'completed';
 
           return (
-            <div key={task.id} className={`p-4 flex items-center justify-between hover:bg-gray-50 transition-colors ${isCompleted ? 'bg-green-50/30' : ''}`}>
+            <div key={task.id} className={`p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors ${isCompleted ? 'bg-green-50/30 dark:bg-green-900/10' : ''}`}>
               <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg ${isCompleted ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}`}>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-lg ${isCompleted ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' : 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400'}`}>
                   #{machine?.number}
                 </div>
                 <button 
@@ -74,7 +74,7 @@ export const TodayTasks: React.FC = () => {
                   className="text-left group"
                 >
                   <div className="flex items-center gap-2">
-                    <h4 className={`font-bold text-sm ${isCompleted ? 'text-gray-400 line-through' : 'text-gray-900 group-hover:text-blue-600 transition-colors'}`}>
+                    <h4 className={`font-bold text-sm ${isCompleted ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors'}`}>
                       {pmTask?.name}
                     </h4>
                     {pmTask && (
@@ -84,7 +84,7 @@ export const TodayTasks: React.FC = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${isCompleted ? 'text-green-500' : 'text-gray-400'}`}>
+                    <span className={`text-[10px] font-black uppercase tracking-widest ${isCompleted ? 'text-green-500 dark:text-green-400' : 'text-gray-400 dark:text-gray-500'}`}>
                       {isCompleted ? 'Completed' : 'Pending'}
                     </span>
                   </div>
@@ -95,8 +95,8 @@ export const TodayTasks: React.FC = () => {
                 onClick={() => updateTaskStatus(task.id, isCompleted ? 'pending' : 'completed')}
                 className={`p-3 rounded-xl transition-all ${
                   isCompleted 
-                    ? 'text-green-600 hover:bg-green-100' 
-                    : 'text-gray-300 hover:text-blue-600 hover:bg-blue-50'
+                    ? 'text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30' 
+                    : 'text-gray-300 dark:text-gray-700 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30'
                 }`}
               >
                 {isCompleted ? <CheckCircle2 size={24} /> : <CircleIcon size={24} />}
@@ -106,11 +106,11 @@ export const TodayTasks: React.FC = () => {
         })}
       </div>
 
-      <div className="p-4 bg-gray-50 border-t flex justify-between items-center">
-        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-1">
+      <div className="p-4 bg-gray-50 dark:bg-slate-800/50 border-t border-gray-100 dark:border-slate-800 flex justify-between items-center">
+        <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest flex items-center gap-1">
           <AlertCircle size={12} /> Priority: High
         </p>
-        <button className="text-blue-600 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:gap-2 transition-all">
+        <button className="text-blue-600 dark:text-blue-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-1 hover:gap-2 transition-all">
           View All <ArrowRight size={12} />
         </button>
       </div>
