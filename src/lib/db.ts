@@ -89,6 +89,7 @@ db.exec(`
     category TEXT NOT NULL,
     quantity INTEGER DEFAULT 0,
     minQuantity INTEGER DEFAULT 5,
+    idealQuantity INTEGER DEFAULT 10,
     location TEXT,
     pdfPage INTEGER
   );
@@ -143,6 +144,19 @@ try {
   }
 } catch (e) {
   console.error("Migration error:", e);
+}
+
+// Add inventory table columns if they don't exist (Migration)
+try {
+  const tableInfo = db.prepare("PRAGMA table_info(inventory)").all() as any[];
+  if (tableInfo.length > 0) {
+    const columns = tableInfo.map(c => c.name);
+    if (!columns.includes('idealQuantity')) {
+      db.prepare("ALTER TABLE inventory ADD COLUMN idealQuantity INTEGER DEFAULT 10").run();
+    }
+  }
+} catch (e) {
+  console.error("Migration error (inventory):", e);
 }
 
 // Initial data migration

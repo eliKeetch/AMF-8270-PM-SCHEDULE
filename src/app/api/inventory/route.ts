@@ -52,12 +52,12 @@ export async function PATCH(request: Request) {
       db.prepare('UPDATE inventory SET quantity = ? WHERE id = ?').run(quantity, id);
     } else {
       // Full update
-      const { partNumber, name, category, minQuantity, location, pdfPage } = body;
+      const { partNumber, name, category, minQuantity, idealQuantity, location, pdfPage } = body;
       db.prepare(`
         UPDATE inventory 
-        SET partNumber = ?, name = ?, category = ?, minQuantity = ?, location = ?, pdfPage = ?
+        SET partNumber = ?, name = ?, category = ?, minQuantity = ?, idealQuantity = ?, location = ?, pdfPage = ?
         WHERE id = ?
-      `).run(partNumber, name, category, minQuantity, location, pdfPage, id);
+      `).run(partNumber, name, category, minQuantity, idealQuantity, location, pdfPage, id);
     }
     
     const updatedItem = db.prepare('SELECT * FROM inventory WHERE id = ?').get(id);

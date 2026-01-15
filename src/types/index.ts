@@ -111,6 +111,7 @@ export interface InventoryItem {
   category: InventoryCategory;
   quantity: number;
   minQuantity: number;
+  idealQuantity: number;
   location?: string;
   pdfPage?: number;
 }
