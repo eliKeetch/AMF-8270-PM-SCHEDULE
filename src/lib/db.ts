@@ -102,6 +102,13 @@ db.exec(`
     timestamp TEXT NOT NULL,
     FOREIGN KEY (itemId) REFERENCES inventory(id)
   );
+
+  CREATE TABLE IF NOT EXISTS parts_catalogue (
+    partNumber TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    assemblyTitle TEXT,
+    pdfPage INTEGER
+  );
 `);
 
 // Add machine_issues table columns if they don't exist (Migration)
@@ -210,21 +217,64 @@ if (settingsCount.count === 0) {
 
 // Initial inventory data
 const inventoryCount = db.prepare('SELECT COUNT(*) as count FROM inventory').get() as { count: number };
-if (inventoryCount.count === 0) {
+if (inventoryCount.count <= 4) {
   const INITIAL_INVENTORY = [
     { id: 'inv-1', partNumber: '070-006-123', name: 'Distributor Pinion', category: 'Distributor', quantity: 10, minQuantity: 2, pdfPage: 14 },
     { id: 'inv-2', partNumber: '000-024-654', name: 'Belt Tensioner Oilite', category: 'Consumables', quantity: 25, minQuantity: 5, pdfPage: 15 },
     { id: 'inv-3', partNumber: '090-004-111', name: 'Table Conn. Rod Bushing', category: 'Drive', quantity: 8, minQuantity: 2, pdfPage: 6 },
     { id: 'inv-4', partNumber: '612-070-022', name: 'Sweep Cam Switch', category: 'Electrical', quantity: 4, minQuantity: 1, pdfPage: 553 },
+    { id: 'inv-5', partNumber: '610704052', name: 'WH MTR/RECPT ASSY 115/60', category: 'Electrical', quantity: 2, minQuantity: 1, pdfPage: 4 },
+    { id: 'inv-6', partNumber: '070001699', name: 'SHAFT, SWEEP DRIVE', category: 'Drive', quantity: 5, minQuantity: 2, pdfPage: 4 },
+    { id: 'inv-7', partNumber: '070006219', name: 'MTR-115/230-50 COMB', category: 'Drive', quantity: 3, minQuantity: 1, pdfPage: 4 },
+    { id: 'inv-8', partNumber: '000027655', name: 'RECEPTACLE-MALE', category: 'Electrical', quantity: 12, minQuantity: 4, pdfPage: 4 },
+    { id: 'inv-9', partNumber: '070001707', name: 'SPRING', category: 'Consumables', quantity: 20, minQuantity: 5, pdfPage: 4 },
+    { id: 'inv-10', partNumber: '070006765', name: 'SHAFT PLATE', category: 'Drive', quantity: 4, minQuantity: 2, pdfPage: 4 },
   ];
 
-  const insertItem = db.prepare('INSERT INTO inventory (id, partNumber, name, category, quantity, minQuantity, pdfPage) VALUES (?, ?, ?, ?, ?, ?, ?)');
+  const insertItem = db.prepare('INSERT OR IGNORE INTO inventory (id, partNumber, name, category, quantity, minQuantity, pdfPage) VALUES (?, ?, ?, ?, ?, ?, ?)');
   const transaction = db.transaction((items) => {
     for (const item of items) {
       insertItem.run(item.id, item.partNumber, item.name, item.category, item.quantity, item.minQuantity, item.pdfPage);
     }
   });
   transaction(INITIAL_INVENTORY);
+}
+
+// Seed parts catalogue from JSONL
+const catalogueCount = db.prepare('SELECT COUNT(*) as count FROM parts_catalogue').get() as { count: number };
+if (catalogueCount.count === 0) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const jsonlPath = path.join(process.cwd(), 'files', 'amf_8270_parts.jsonl');
+    
+    if (fs.existsSync(jsonlPath)) {
+      const content = fs.readFileSync(jsonlPath, 'utf8');
+      const lines = content.split('\n').filter(Boolean);
+      
+      const insertPart = db.prepare(`
+        INSERT OR IGNORE INTO parts_catalogue (partNumber, name, assemblyTitle, pdfPage)
+        VALUES (?, ?, ?, ?)
+      `);
+      
+      const transaction = db.transaction((parts) => {
+        for (const line of parts) {
+          const part = JSON.parse(line);
+          insertPart.run(
+            part.part_number,
+            part.description,
+            part.assembly_title,
+            parseInt(part.assembly_drawing_page)
+          );
+        }
+      });
+      
+      transaction(lines);
+      console.log(`Seeded ${lines.length} parts into catalogue.`);
+    }
+  } catch (error) {
+    console.error('Error seeding parts catalogue:', error);
+  }
 }
 
 export default db;

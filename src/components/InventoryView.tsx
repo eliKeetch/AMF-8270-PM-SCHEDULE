@@ -256,6 +256,10 @@ export const InventoryView: React.FC = () => {
 
 const AddPartModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
   const { addItem } = useInventory();
+  const [catalogueQuery, setCatalogueQuery] = useState('');
+  const [catalogueResults, setCatalogueQueryResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  
   const [formData, setFormData] = useState({
     partNumber: '',
     name: '',
@@ -264,6 +268,42 @@ const AddPartModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     minQuantity: 5,
     pdfPage: ''
   });
+
+  const handleCatalogueSearch = async (q: string) => {
+    setCatalogueQuery(q);
+    if (q.length < 2) {
+      setCatalogueQueryResults([]);
+      return;
+    }
+    
+    setIsSearching(true);
+    try {
+      const res = await fetch(`/api/inventory/catalogue?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+      setCatalogueQueryResults(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const selectCataloguePart = (part: any) => {
+    setFormData({
+      ...formData,
+      partNumber: part.partNumber,
+      name: part.name,
+      pdfPage: part.pdfPage.toString(),
+      // Auto-assign category based on assembly title if possible
+      category: part.assemblyTitle.includes('ELECTRICAL') ? 'Electrical' :
+                part.assemblyTitle.includes('DISTRIBUTOR') ? 'Distributor' :
+                part.assemblyTitle.includes('BALL') ? 'Ball Lift' :
+                part.assemblyTitle.includes('CUSHION') ? 'Cushion' :
+                part.assemblyTitle.includes('DRIVE') ? 'Drive' : 'Other'
+    });
+    setCatalogueQueryResults([]);
+    setCatalogueQuery('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -279,9 +319,47 @@ const AddPartModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
       <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-lg p-8 shadow-2xl animate-in zoom-in-95 duration-200 border border-white/10">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Add New Part</h3>
-          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-all">
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl transition-all text-gray-400">
             <X size={20} />
           </button>
+        </div>
+
+        <div className="mb-6 relative">
+          <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest ml-1 mb-2 block">Search Master Catalogue</label>
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input 
+              type="text"
+              value={catalogueQuery}
+              onChange={e => handleCatalogueSearch(e.target.value)}
+              placeholder="Start typing part name or number..."
+              className="w-full bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-100 dark:border-blue-800/50 rounded-2xl pl-12 pr-4 py-4 text-sm font-bold text-gray-900 dark:text-white outline-none focus:border-blue-500 transition-all placeholder:text-blue-300 dark:placeholder:text-blue-700"
+            />
+          </div>
+          
+          {catalogueResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-2xl z-50 max-h-64 overflow-y-auto">
+              {catalogueResults.map(part => (
+                <div 
+                  key={part.partNumber}
+                  onClick={() => selectCataloguePart(part)}
+                  className="p-4 hover:bg-blue-50 dark:hover:bg-blue-900/30 cursor-pointer border-b border-gray-50 dark:border-slate-700 last:border-none group"
+                >
+                  <div className="text-xs font-black text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">{part.name}</div>
+                  <div className="flex justify-between items-center mt-1">
+                    <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 font-mono">#{part.partNumber}</span>
+                    <span className="text-[9px] font-black text-gray-300 dark:text-gray-600 uppercase tracking-tight">{part.assemblyTitle}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-4 mb-6">
+          <div className="h-px flex-1 bg-gray-100 dark:bg-slate-800" />
+          <span className="text-[10px] font-black text-gray-300 dark:text-gray-600 uppercase tracking-[0.2em]">OR MANUAL ENTRY</span>
+          <div className="h-px flex-1 bg-gray-100 dark:bg-slate-800" />
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

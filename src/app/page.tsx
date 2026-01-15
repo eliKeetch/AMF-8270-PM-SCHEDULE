@@ -228,9 +228,9 @@ export default function Home() {
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Content Area */}
-          <div className={`${activeTab === 'front_desk' || activeTab === 'intelligence' || activeTab === 'users' || activeTab === 'account' ? 'lg:col-span-12' : 'lg:col-span-8'} space-y-8`}>
+          <div className={`${activeTab === 'front_desk' || activeTab === 'intelligence' || activeTab === 'users' || activeTab === 'account' || activeTab === 'inventory' ? 'lg:col-span-12' : 'lg:col-span-8'} space-y-8`}>
             {/* Quick Stats / Welcome */}
-            {(activeTab !== 'front_desk' && activeTab !== 'intelligence' && activeTab !== 'users' && activeTab !== 'account') && (
+            {(activeTab !== 'front_desk' && activeTab !== 'intelligence' && activeTab !== 'users' && activeTab !== 'account' && activeTab !== 'inventory') && (
               <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-gray-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                   <Zap size={120} className="text-blue-600 dark:text-blue-400" />
@@ -289,7 +289,7 @@ export default function Home() {
           </div>
 
           {/* Sidebar Area */}
-          {(activeTab !== 'front_desk' && activeTab !== 'intelligence' && activeTab !== 'users') && (
+          {(activeTab !== 'front_desk' && activeTab !== 'intelligence' && activeTab !== 'users' && activeTab !== 'inventory') && (
             <div className="lg:col-span-4 space-y-8">
               <TodayTasks />
               

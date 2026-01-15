@@ -22,7 +22,7 @@ export const ManualModal: React.FC<ManualModalProps> = ({ task, initialPage, man
 
   const pdfPath = displayManual === 'lubrication' 
     ? `/files/AMF8270LubricationManual.pdf#page=${displayPage}&navpanes=0&view=Fit`
-    : `/files/8270-service-parts-manual.pdf#page=${displayPage}&navpanes=0&view=Fit`;
+    : `/files/8270parts.pdf#page=${displayPage}&navpanes=0&view=Fit`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
@@ -100,7 +100,7 @@ export const ManualModal: React.FC<ManualModalProps> = ({ task, initialPage, man
           <div className="flex-1 bg-gray-200 dark:bg-slate-950 relative">
             <iframe 
               src={pdfPath}
-              className="w-full h-full border-none dark:invert dark:hue-rotate-180"
+              className="w-full h-full border-none"
               title="Manual PDF Viewer"
             />
           </div>
