@@ -21,10 +21,30 @@ import {
   Calendar,
   History,
   Calculator,
-  Plus
+  Plus,
+  CheckCircle2,
+  AlertCircle,
+  XCircle,
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react';
 import { BowlingPin } from './Icons';
-import { startOfWeek, startOfMonth, subDays, isWithinInterval, parseISO, format } from 'date-fns';
+import { 
+  startOfWeek, 
+  startOfMonth, 
+  startOfYear, 
+  endOfWeek, 
+  endOfMonth, 
+  endOfYear, 
+  subDays, 
+  isWithinInterval, 
+  parseISO, 
+  format, 
+  isSameDay,
+  addDays,
+  subWeeks,
+  addWeeks
+} from 'date-fns';
 
 export const IssueSummary: React.FC = () => {
   const { issues, getAllIssueStats, isLoaded: issuesLoaded } = useIssues();
@@ -33,8 +53,34 @@ export const IssueSummary: React.FC = () => {
   const { frameLogs, addFrameLog, isLoaded: framesLoaded } = useFrames();
   
   const [showFrameModal, setShowFrameModal] = React.useState(false);
-  const [newFrameCount, setNewFrameCount] = React.useState('');
-  const [newFrameDate, setNewFrameDate] = React.useState(format(new Date(), 'yyyy-MM-dd'));
+  const [newFrameDate, setNewFrameDate] = React.useState(format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd'));
+  const [weekFrames, setWeekFrames] = React.useState<Record<string, string>>({});
+  
+  const [viewRange, setViewRange] = React.useState<'week' | 'month' | 'year' | 'custom'>('week');
+  const [customRange, setCustomRange] = React.useState({
+    start: format(subDays(new Date(), 7), 'yyyy-MM-dd'),
+    end: format(new Date(), 'yyyy-MM-dd')
+  });
+
+  const handleWeekChange = React.useCallback((dateStr: string) => {
+    const start = startOfWeek(parseISO(dateStr), { weekStartsOn: 1 });
+    const formattedStart = format(start, 'yyyy-MM-dd');
+    setNewFrameDate(formattedStart);
+    
+    const newWeekFrames: Record<string, string> = {};
+    for (let i = 0; i < 7; i++) {
+      const d = format(addDays(start, i), 'yyyy-MM-dd');
+      const existing = frameLogs.find(l => l.date === d);
+      newWeekFrames[d] = existing ? existing.frameCount.toString() : '';
+    }
+    setWeekFrames(newWeekFrames);
+  }, [frameLogs]);
+
+  React.useEffect(() => {
+    if (showFrameModal) {
+      handleWeekChange(newFrameDate);
+    }
+  }, [showFrameModal, handleWeekChange, newFrameDate]);
 
   if (!issuesLoaded || !machinesLoaded || !settingsLoaded || !framesLoaded) {
     return (
@@ -44,9 +90,47 @@ export const IssueSummary: React.FC = () => {
     );
   }
 
+  const getInterval = () => {
+    const now = new Date();
+    switch (viewRange) {
+      case 'week': return { start: startOfWeek(now, { weekStartsOn: 1 }), end: now };
+      case 'month': return { start: startOfMonth(now), end: now };
+      case 'year': return { start: startOfYear(now), end: now };
+      case 'custom': return { start: parseISO(customRange.start), end: parseISO(customRange.end) };
+    }
+  };
+
+  const currentInterval = getInterval();
+
+  const calculateStats = (interval: { start: Date; end: Date }) => {
+    const filteredFrames = frameLogs.filter(l => {
+      const d = parseISO(l.date);
+      return isWithinInterval(d, interval);
+    });
+    
+    const filteredIssues = issues.filter(i => {
+      const d = parseISO(i.timestamp);
+      return isWithinInterval(d, interval);
+    });
+
+    const totalFrames = filteredFrames.reduce((acc, l) => acc + l.frameCount, 0);
+    const stopCount = filteredIssues.filter(i => i.isStop).length;
+
+    return {
+      fps: stopCount === 0 ? totalFrames : Math.round(totalFrames / stopCount),
+      frames: totalFrames,
+      stops: stopCount,
+      reports: filteredIssues.length,
+      filteredIssues
+    };
+  };
+
+  const stats = calculateStats(currentInterval);
+  const filteredIssues = stats.filteredIssues;
+
   const handleExportCSV = () => {
     const headers = ['Timestamp', 'Machine', 'Type', 'Is Stop?', 'Stop Category', 'Status', 'Notes'];
-    const rows = issues.map(issue => {
+    const rows = filteredIssues.map(issue => {
       const machine = machines.find(m => m.id === issue.machineId);
       return [
         new Date(issue.timestamp).toLocaleString(),
@@ -64,57 +148,20 @@ export const IssueSummary: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `pinsetter_audit_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute("download", `pinsetter_audit_${viewRange}_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const handleGenerateAudit = () => {
-    window.print();
-  };
-
-  const handleAddFrames = (e: React.FormEvent) => {
+  const handleSaveWeek = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newFrameCount) {
-      addFrameLog(newFrameDate, parseInt(newFrameCount));
-      setNewFrameCount('');
-      setShowFrameModal(false);
-    }
-  };
-
-  // FPS Calculations
-  const calculateFPS = (interval?: { start: Date; end: Date }) => {
-    const filteredFrames = interval 
-      ? frameLogs.filter(l => isWithinInterval(parseISO(l.date), interval))
-      : frameLogs;
-    
-    const filteredIssues = interval
-      ? issues.filter(i => isWithinInterval(parseISO(i.timestamp), interval))
-      : issues;
-
-    const totalFrames = filteredFrames.reduce((acc, l) => acc + l.frameCount, 0);
-    const stopCount = filteredIssues.filter(i => i.isStop).length;
-
-    return {
-      fps: stopCount === 0 ? totalFrames : Math.round(totalFrames / stopCount),
-      frames: totalFrames,
-      stops: stopCount
-    };
-  };
-
-  const now = new Date();
-  const weeklyStats = calculateFPS({ start: startOfWeek(now), end: now });
-  const monthlyStats = calculateFPS({ start: startOfMonth(now), end: now });
-  const allTimeStats = calculateFPS();
-
-  const issueStats = getAllIssueStats();
-  const thresholds = settings?.issueThresholds || {
-    pin_drop: 5,
-    scoring: 3,
-    interlock: 2,
-    ball_return: 4,
-    other: 5,
+    const promises = Object.entries(weekFrames).map(([date, count]) => {
+      if (!count) return Promise.resolve();
+      return addFrameLog(date, parseInt(count));
+    });
+    await Promise.all(promises);
+    setShowFrameModal(false);
   };
 
   const totalIssuesByType: Record<IssueType, number> = {
@@ -125,19 +172,33 @@ export const IssueSummary: React.FC = () => {
     other: 0,
   };
 
-  const problematicMachines: { machineNumber: number; issueType: IssueType; count: number }[] = [];
+  const machineIssueCounts: Record<string, Record<IssueType, number>> = {};
+  filteredIssues.forEach(issue => {
+    if (!machineIssueCounts[issue.machineId]) {
+      machineIssueCounts[issue.machineId] = { pin_drop: 0, scoring: 0, interlock: 0, ball_return: 0, other: 0 };
+    }
+    machineIssueCounts[issue.machineId][issue.type]++;
+    totalIssuesByType[issue.type]++;
+  });
 
-  Object.entries(issueStats).forEach(([machineId, stats]) => {
+  const problematicMachines: { machineNumber: number; issueType: IssueType; count: number }[] = [];
+  const thresholds = settings?.issueThresholds || {
+    pin_drop: 5,
+    scoring: 3,
+    interlock: 2,
+    ball_return: 4,
+    other: 5,
+  };
+
+  Object.entries(machineIssueCounts).forEach(([machineId, counts]) => {
     const machine = machines.find(m => m.id === machineId);
     if (!machine) return;
-
-    Object.entries(stats).forEach(([type, count]) => {
-      totalIssuesByType[type as IssueType] += count;
-      if (count >= thresholds[type as IssueType]) {
+    Object.entries(counts).forEach(([type, count]) => {
+      if (count >= (thresholds as any)[type]) {
         problematicMachines.push({
           machineNumber: machine.number,
           issueType: type as IssueType,
-          count,
+          count
         });
       }
     });
@@ -159,27 +220,55 @@ export const IssueSummary: React.FC = () => {
 
   return (
     <div className="p-10 bg-slate-50/50 min-h-screen">
-      <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+      {/* Header & Range Toggles */}
+      <div className="flex flex-col md:flex-row justify-between items-start mb-12 gap-6">
         <div>
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-1 bg-blue-600 rounded-full" />
             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-600">Executive Summary</span>
           </div>
           <h2 className="text-5xl font-black text-slate-900 tracking-tighter uppercase leading-none">Machine Intelligence</h2>
-          <p className="text-slate-500 font-medium mt-4 max-w-xl text-lg">Statistical analysis of recurring machine failures and operational trends for improved ROI and uptime.</p>
+          <p className="text-slate-500 font-medium mt-4 max-w-xl text-lg italic">
+            Statistical analysis for {format(currentInterval.start, 'MMM d, yyyy')} - {format(currentInterval.end, 'MMM d, yyyy')}
+          </p>
         </div>
-        <div className="flex gap-4">
-          <div className="bg-white px-6 py-4 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col items-center">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">House Health</span>
-            <span className="text-2xl font-black text-slate-900">94.2%</span>
+        
+        <div className="flex flex-col items-end gap-4">
+          <div className="bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm flex gap-1">
+            {(['week', 'month', 'year', 'custom'] as const).map(range => (
+              <button
+                key={range}
+                onClick={() => setViewRange(range)}
+                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                  viewRange === range ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'
+                }`}
+              >
+                {range}
+              </button>
+            ))}
           </div>
-          <div className="bg-white px-6 py-4 rounded-[2rem] border border-slate-200 shadow-sm flex flex-col items-center">
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">PM Compliance</span>
-            <span className="text-2xl font-black text-slate-900">88.0%</span>
-          </div>
+
+          {viewRange === 'custom' && (
+            <div className="flex gap-2 animate-in fade-in slide-in-from-top-2">
+              <input 
+                type="date" 
+                value={customRange.start}
+                onChange={(e) => setCustomRange(prev => ({ ...prev, start: e.target.value }))}
+                className="bg-white border-2 border-slate-100 rounded-xl px-3 py-1.5 text-xs font-bold focus:border-blue-500 outline-none"
+              />
+              <span className="text-slate-300 self-center">→</span>
+              <input 
+                type="date" 
+                value={customRange.end}
+                onChange={(e) => setCustomRange(prev => ({ ...prev, end: e.target.value }))}
+                className="bg-white border-2 border-slate-100 rounded-xl px-3 py-1.5 text-xs font-bold focus:border-blue-500 outline-none"
+              />
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-12">
         {(Object.entries(totalIssuesByType) as [IssueType, number][]).map(([type, count]) => (
           <div key={type} className="bg-white border border-slate-200 p-6 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all hover:-translate-y-1">
@@ -187,8 +276,8 @@ export const IssueSummary: React.FC = () => {
               <div className="p-3 bg-slate-50 rounded-2xl text-slate-600 border border-slate-100">
                 {getIssueIcon(type)}
               </div>
-              <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter ${count > 5 ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-400'}`}>
-                {count > 5 ? 'High' : 'Normal'}
+              <div className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-tighter ${count > (thresholds as any)[type] ? 'bg-red-50 text-red-600' : 'bg-slate-50 text-slate-400'}`}>
+                {count > (thresholds as any)[type] ? 'High' : 'Normal'}
               </div>
             </div>
             <div className="text-4xl font-black text-slate-900 leading-none mb-2">{count}</div>
@@ -198,212 +287,318 @@ export const IssueSummary: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Analytics Section */}
         <div className="lg:col-span-8 space-y-10">
-          <div className="bg-white border border-slate-200 rounded-[3rem] p-10 shadow-sm">
-            <div className="flex items-center justify-between mb-10">
-              <div className="flex items-center gap-4">
-                <div className="bg-blue-600 text-white p-3 rounded-2xl shadow-lg shadow-blue-100">
-                  <BarChart2 size={24} />
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Performance Outlook</h3>
-              </div>
-              <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">MTBF Analysis</div>
-            </div>
-
-            <div className="space-y-8">
-              {(Object.entries(totalIssuesByType) as [IssueType, number][]).map(([type, count]) => {
-                const max = Math.max(...Object.values(totalIssuesByType), 1);
-                const percentage = (count / max) * 100;
-                
-                return (
-                  <div key={type} className="grid grid-cols-12 gap-6 items-center">
-                    <div className="col-span-3">
-                      <span className="text-xs font-black uppercase tracking-widest text-slate-500">{getIssueLabel(type)}</span>
-                    </div>
-                    <div className="col-span-7 h-4 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
-                      <div 
-                        className={`h-full rounded-full transition-all duration-1000 ease-out ${percentage > 70 ? 'bg-red-500' : percentage > 40 ? 'bg-amber-500' : 'bg-blue-600'}`}
-                        style={{ width: `${percentage}%` }}
-                      />
-                    </div>
-                    <div className="col-span-2 text-right">
-                      <span className="text-lg font-black text-slate-900">{count}</span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="bg-slate-900 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-10 opacity-10">
-              <Zap size={150} className="text-blue-400" />
-            </div>
-            <div className="relative z-10">
-              <h3 className="text-2xl font-black tracking-tight mb-6 uppercase flex items-center gap-3">
-                <TrendingUp size={24} className="text-blue-400" /> Strategic Insight
-              </h3>
-              <p className="text-slate-300 font-medium leading-relaxed mb-8 max-w-2xl text-lg">
-                Current data patterns indicate that <span className="text-white font-bold underline decoration-blue-500">Machine {problematicMachines.length > 0 ? problematicMachines[0].machineNumber : 'N/A'}</span> is experiencing an above-average failure rate in the {problematicMachines.length > 0 ? getIssueLabel(problematicMachines[0].issueType) : 'critical'} system.
-              </p>
-              <div className="flex gap-4">
-                <button 
-                  onClick={handleGenerateAudit}
-                  className="bg-blue-600 text-white px-8 py-4 rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-blue-700 transition-all flex items-center gap-3 shadow-xl shadow-blue-900/20"
-                >
-                  Generate Full Audit <FileText size={18} />
-                </button>
-                <button 
-                  onClick={handleExportCSV}
-                  className="bg-white/10 hover:bg-white/20 text-white border border-white/10 px-8 py-4 rounded-[1.5rem] font-black uppercase tracking-widest text-xs transition-all flex items-center gap-3"
-                >
-                  Export CSV <Download size={18} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* FPS Analysis Section */}
+          {/* FPS Section */}
           <div className="bg-white border border-slate-200 rounded-[3rem] p-10 shadow-sm">
             <div className="flex items-center justify-between mb-10">
               <div className="flex items-center gap-4">
                 <div className="bg-emerald-600 text-white p-3 rounded-2xl shadow-lg shadow-emerald-100">
                   <Calculator size={24} />
                 </div>
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Frames Per Stop (FPS)</h3>
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase leading-none">Frames Per Stop (FPS)</h3>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Efficiency Metric</p>
+                </div>
               </div>
               <button 
                 onClick={() => setShowFrameModal(true)}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2"
+                className="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-slate-800 shadow-xl shadow-slate-200 flex items-center gap-2"
               >
                 <Plus size={14} /> Log Weekly Frames
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-4">This Week</span>
-                <div className="text-5xl font-black text-slate-900 mb-2">{weeklyStats.fps.toLocaleString()}</div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Target: 2,000</span>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">{weeklyStats.stops} Stops</span>
+              <div className="bg-slate-950 rounded-[2.5rem] p-8 text-white relative overflow-hidden group">
+                <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:scale-110 transition-transform">
+                  <TrendingUp size={120} />
+                </div>
+                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block mb-4">Calculated FPS</span>
+                <div className="text-6xl font-black mb-2 tracking-tighter">{stats.fps.toLocaleString()}</div>
+                <div className="flex justify-between items-center border-t border-white/10 pt-4">
+                  <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest">Efficiency Rating</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Target: 2,000</span>
                 </div>
               </div>
-              <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-4">This Month</span>
-                <div className="text-5xl font-black text-slate-900 mb-2">{monthlyStats.fps.toLocaleString()}</div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Target: 2,000</span>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">{monthlyStats.stops} Stops</span>
+
+              <div className="bg-slate-50 rounded-[2.5rem] p-8 border border-slate-100 group">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-4 text-center">Frames Bowled</span>
+                <div className="text-5xl font-black text-slate-900 mb-4 text-center tracking-tighter">{stats.frames.toLocaleString()}</div>
+                <div className="flex flex-col gap-2">
+                  <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-blue-600 rounded-full" style={{ width: '100%' }} />
+                  </div>
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Total Volume in Period</span>
                 </div>
               </div>
-              <div className="bg-slate-50 rounded-[2rem] p-8 border border-slate-100">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] block mb-4">All Time</span>
-                <div className="text-5xl font-black text-slate-900 mb-2">{allTimeStats.fps.toLocaleString()}</div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Average</span>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase">{allTimeStats.stops} Total Stops</span>
+
+              <div className="bg-red-50 rounded-[2.5rem] p-8 border border-red-100 group">
+                <span className="text-[10px] font-black text-red-400 uppercase tracking-[0.2em] block mb-4 text-center">Mechanical Stops</span>
+                <div className="text-5xl font-black text-red-600 mb-4 text-center tracking-tighter">{stats.stops}</div>
+                <div className="flex flex-col gap-2">
+                  <div className="h-1.5 w-full bg-red-200 rounded-full overflow-hidden">
+                    <div className="h-full bg-red-500 rounded-full" style={{ width: `${Math.min(100, (stats.stops / 20) * 100)}%` }} />
+                  </div>
+                  <span className="text-[9px] font-black text-red-400 uppercase tracking-widest text-center">Impact on Service</span>
                 </div>
               </div>
+            </div>
+
+            {/* Daily Breakdown */}
+            {(viewRange === 'week' || viewRange === 'custom') && (
+              <div className="mt-10 pt-10 border-t border-slate-100">
+                <h4 className="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 ml-2">Daily Performance Breakdown</h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                  {Array.from({ length: 7 }).map((_, i) => {
+                    const date = subDays(currentInterval.end, i);
+                    const dateStr = format(date, 'yyyy-MM-dd');
+                    const dayFrames = frameLogs.find(l => l.date === dateStr)?.frameCount || 0;
+                    const dayStops = issues.filter(issue => issue.isStop && isSameDay(parseISO(issue.timestamp), date)).length;
+                    const dayFps = dayStops === 0 ? dayFrames : Math.round(dayFrames / dayStops);
+
+                    return (
+                      <div key={i} className="bg-slate-50 rounded-2xl p-4 border border-slate-100 flex flex-col items-center">
+                        <span className="text-[9px] font-black text-slate-400 uppercase mb-2">{format(date, 'EEE d')}</span>
+                        <div className="text-lg font-black text-slate-900 leading-none">{dayFps.toLocaleString()}</div>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter mt-1">FPS</span>
+                        <div className="mt-3 flex gap-1">
+                          <div className={`w-1 h-1 rounded-full ${dayFrames > 0 ? 'bg-blue-500' : 'bg-slate-200'}`} />
+                          <div className={`w-1 h-1 rounded-full ${dayStops > 0 ? 'bg-red-500' : 'bg-slate-200'}`} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Activity History */}
+          <div className="bg-white border border-slate-200 rounded-[3rem] p-10 shadow-sm">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="bg-slate-100 text-slate-600 p-3 rounded-2xl">
+                  <History size={24} />
+                </div>
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight uppercase">Activity History</h3>
+              </div>
+              <button 
+                onClick={handleExportCSV}
+                className="bg-slate-50 hover:bg-slate-100 text-slate-600 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 border border-slate-100"
+              >
+                <Download size={14} /> Export CSV
+              </button>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b-2 border-slate-50">
+                    <th className="text-left py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Date/Time</th>
+                    <th className="text-left py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Machine</th>
+                    <th className="text-left py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Category</th>
+                    <th className="text-left py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Impact</th>
+                    <th className="text-right py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 pr-4">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {filteredIssues.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-slate-400 text-sm font-medium italic">No activity recorded for this period.</td>
+                    </tr>
+                  ) : (
+                    filteredIssues.map(issue => {
+                      const machine = machines.find(m => m.id === issue.machineId);
+                      return (
+                        <tr key={issue.id} className="group hover:bg-slate-50/50 transition-colors">
+                          <td className="py-4">
+                            <div className="text-xs font-black text-slate-900">{format(parseISO(issue.timestamp), 'MMM d')}</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase">{format(parseISO(issue.timestamp), 'h:mm a')}</div>
+                          </td>
+                          <td className="py-4">
+                            <span className="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center text-[10px] font-black">#{machine?.number}</span>
+                          </td>
+                          <td className="py-4">
+                            <div className="flex items-center gap-2">
+                              <span className="p-1.5 rounded-lg bg-slate-100 text-slate-600">{getIssueIcon(issue.type)}</span>
+                              <span className="text-[10px] font-black uppercase text-slate-700">{getIssueLabel(issue.type)}</span>
+                            </div>
+                          </td>
+                          <td className="py-4">
+                            {issue.isStop ? (
+                              <span className="px-2 py-1 rounded-lg bg-red-100 text-red-700 text-[9px] font-black uppercase border border-red-200">MECHANICAL STOP</span>
+                            ) : (
+                              <span className="px-2 py-1 rounded-lg bg-blue-100 text-blue-700 text-[9px] font-black uppercase border border-blue-200">QUICK REPORT</span>
+                            )}
+                          </td>
+                          <td className="py-4 text-right pr-4">
+                            {issue.resolved ? (
+                              <CheckCircle2 size={16} className="text-green-500 ml-auto" />
+                            ) : (
+                              <AlertCircle size={16} className="text-amber-500 ml-auto" />
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
 
-        {/* Priority Alerts Sidebar */}
-        <div className="lg:col-span-4">
-          <div className="bg-red-50 border-2 border-red-100 rounded-[3rem] p-8 h-full">
+        <div className="lg:col-span-4 space-y-10">
+          <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-10">
+              <Zap size={120} className="text-blue-400" />
+            </div>
+            <h3 className="text-xl font-black uppercase tracking-tight mb-6 flex items-center gap-3">
+              <TrendingUp size={20} className="text-blue-400" /> Strategic Insight
+            </h3>
+            <p className="text-slate-300 font-medium leading-relaxed mb-8 text-sm">
+              {problematicMachines.length > 0 ? (
+                <>
+                  <span className="text-white font-bold underline decoration-blue-500">Machine #{problematicMachines[0].machineNumber}</span> is 
+                  triggering <span className="text-white font-bold underline decoration-blue-500">{getIssueLabel(problematicMachines[0].issueType)}</span> alerts 
+                  more than {problematicMachines[0].count} times in this period.
+                </>
+              ) : (
+                "Equipment performance is within nominal parameters for this selected timeframe."
+              )}
+            </p>
+            <button 
+              onClick={() => window.print()}
+              className="w-full bg-blue-600 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-blue-700 transition-all flex items-center justify-center gap-3 shadow-xl shadow-blue-900/40"
+            >
+              Print Audit Report <FileText size={16} />
+            </button>
+          </div>
+
+          <div className="bg-red-50 border-2 border-red-100 rounded-[3rem] p-8">
             <div className="flex items-center gap-4 mb-8">
               <div className="bg-red-600 text-white p-3 rounded-2xl shadow-lg shadow-red-200">
                 <AlertTriangle size={24} />
               </div>
-              <h3 className="text-xl font-black text-red-900 tracking-tight uppercase leading-none">Operational Alerts</h3>
+              <h3 className="text-xl font-black text-red-900 tracking-tight uppercase leading-none">High Frequency</h3>
             </div>
 
             {problematicMachines.length > 0 ? (
               <div className="space-y-4">
-                {problematicMachines.map((alert, idx) => (
-                  <div key={idx} className="bg-white border border-red-100 p-6 rounded-[2rem] shadow-sm group hover:scale-[1.02] transition-transform">
+                {problematicMachines.slice(0, 5).map((alert, idx) => (
+                  <div key={idx} className="bg-white border border-red-100 p-6 rounded-[2rem] shadow-sm">
                     <div className="flex items-center gap-4 mb-4">
-                      <div className="w-14 h-14 bg-slate-900 text-white rounded-2xl flex items-center justify-center font-black text-xl shadow-lg group-hover:bg-red-600 transition-colors">
+                      <div className="w-12 h-12 bg-slate-900 text-white rounded-xl flex items-center justify-center font-black text-lg shadow-lg">
                         #{alert.machineNumber}
                       </div>
                       <div>
-                        <p className="text-sm font-black text-slate-900">{getIssueLabel(alert.issueType)}</p>
-                        <p className="text-[10px] font-black text-red-500 uppercase tracking-widest">Action Required</p>
+                        <p className="text-xs font-black text-slate-900 uppercase">{getIssueLabel(alert.issueType)}</p>
+                        <p className="text-[9px] font-black text-red-500 uppercase tracking-widest">Repeat Issue</p>
                       </div>
                     </div>
-                    <div className="flex justify-between items-end border-t border-slate-50 pt-4">
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Total Reports</span>
-                        <span className="text-xl font-black text-slate-900">{alert.count}</span>
-                      </div>
-                      <div className="bg-red-50 text-red-700 px-3 py-1 rounded-full text-[9px] font-black uppercase border border-red-100 tracking-tighter">
-                        Exceeds Threshold
-                      </div>
+                    <div className="flex justify-between items-center border-t border-slate-50 pt-4">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Reports: {alert.count}</span>
+                      <div className="bg-red-50 text-red-700 px-2 py-1 rounded-lg text-[8px] font-black uppercase border border-red-100">Exceeds Target</div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="bg-white/50 border border-white/20 p-12 rounded-[2.5rem] text-center">
-                <Zap size={48} className="mx-auto text-green-500 mb-6 opacity-50" />
-                <p className="text-sm font-black text-slate-800 uppercase tracking-widest">House Status: Nominal</p>
-                <p className="text-xs text-slate-500 mt-2">All equipment performing within standard operating parameters.</p>
+              <div className="text-center py-12">
+                <Zap size={48} className="mx-auto text-green-500 mb-4 opacity-30" />
+                <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">All Systems Nominal</p>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Manual Frame Logging Modal */}
+      {/* Weekly FPS Modal */}
       {showFrameModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm" onClick={() => setShowFrameModal(false)} />
-          <div className="relative bg-white rounded-[3rem] w-full max-w-md p-10 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="text-center mb-10">
-              <div className="bg-emerald-100 text-emerald-600 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
-                <Calculator size={40} />
+          <div className="relative bg-white rounded-[3rem] w-full max-w-5xl p-10 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-start mb-10">
+              <div className="flex items-center gap-4">
+                <div className="bg-emerald-100 text-emerald-600 w-16 h-16 rounded-[1.5rem] flex items-center justify-center">
+                  <Calculator size={32} />
+                </div>
+                <div>
+                  <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter leading-none">Weekly FPS Log</h3>
+                  <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mt-2">Manual Frame Entry & Automatic Stop Sync</p>
+                </div>
               </div>
-              <h3 className="text-3xl font-black text-slate-900 uppercase tracking-tighter">Log Frames</h3>
-              <p className="text-slate-500 font-bold uppercase tracking-widest text-xs mt-2">Manual Entry for FPS Tracking</p>
+              <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-2xl border-2 border-slate-100">
+                <button 
+                  type="button"
+                  onClick={() => handleWeekChange(format(subWeeks(parseISO(newFrameDate), 1), 'yyyy-MM-dd'))}
+                  className="p-2 hover:bg-white rounded-xl transition-all text-slate-400 hover:text-blue-600 shadow-sm"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <div className="text-center min-w-[150px]">
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">Week Starting</span>
+                  <span className="font-black text-slate-900">{format(parseISO(newFrameDate), 'MMM d, yyyy')}</span>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => handleWeekChange(format(addWeeks(parseISO(newFrameDate), 1), 'yyyy-MM-dd'))}
+                  className="p-2 hover:bg-white rounded-xl transition-all text-slate-400 hover:text-blue-600 shadow-sm"
+                >
+                  <ArrowRight size={20} />
+                </button>
+              </div>
             </div>
 
-            <form onSubmit={handleAddFrames} className="space-y-6">
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-2">Total Frames Bowled</label>
-                <input 
-                  type="number"
-                  value={newFrameCount}
-                  onChange={(e) => setNewFrameCount(e.target.value)}
-                  placeholder="e.g. 15000"
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 font-black text-2xl focus:border-emerald-500 focus:outline-none transition-all"
-                  required
-                />
+            <form onSubmit={handleSaveWeek}>
+              <div className="grid grid-cols-1 md:grid-cols-7 gap-4 mb-10">
+                {Array.from({ length: 7 }).map((_, i) => {
+                  const date = addDays(parseISO(newFrameDate), i);
+                  const dateStr = format(date, 'yyyy-MM-dd');
+                  const stopsCount = issues.filter(issue => issue.isStop && isSameDay(parseISO(issue.timestamp), date)).length;
+                  
+                  return (
+                    <div key={dateStr} className="bg-slate-50 border border-slate-100 rounded-[2rem] p-4 flex flex-col items-center group hover:border-emerald-500 transition-all">
+                      <span className="text-[10px] font-black text-slate-400 uppercase mb-1">{format(date, 'EEE')}</span>
+                      <span className="text-xs font-black text-slate-900 mb-4">{format(date, 'MMM d')}</span>
+                      
+                      <div className="w-full space-y-4">
+                        <div>
+                          <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest block mb-1 text-center">Frames</label>
+                          <input 
+                            type="number"
+                            value={weekFrames[dateStr] || ''}
+                            onChange={(e) => setWeekFrames(prev => ({ ...prev, [dateStr]: e.target.value }))}
+                            placeholder="0"
+                            className="w-full bg-white border border-slate-200 rounded-xl px-2 py-3 text-center font-black text-sm focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all"
+                          />
+                        </div>
+                        
+                        <div className="bg-white/50 rounded-xl py-2 px-1 border border-slate-100 flex flex-col items-center">
+                          <span className="text-[8px] font-black text-slate-400 uppercase mb-1">Stops</span>
+                          <div className={`text-sm font-black ${stopsCount > 0 ? 'text-red-500' : 'text-slate-300'}`}>
+                            {stopsCount}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div>
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-2">Entry Date</label>
-                <input 
-                  type="date"
-                  value={newFrameDate}
-                  onChange={(e) => setNewFrameDate(e.target.value)}
-                  className="w-full bg-slate-50 border-2 border-slate-100 rounded-2xl px-6 py-4 font-bold focus:border-emerald-500 focus:outline-none transition-all"
-                  required
-                />
-              </div>
-              <div className="flex gap-4 pt-4">
+
+              <div className="flex gap-4">
                 <button
                   type="button"
                   onClick={() => setShowFrameModal(false)}
-                  className="flex-1 bg-slate-100 text-slate-600 font-black uppercase tracking-widest text-xs py-4 rounded-2xl hover:bg-slate-200 transition-all"
+                  className="flex-1 bg-slate-100 text-slate-600 font-black uppercase tracking-widest text-xs py-5 rounded-[1.5rem] hover:bg-slate-200 transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 bg-emerald-600 text-white font-black uppercase tracking-widest text-xs py-4 rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200"
+                  className="flex-[2] bg-emerald-600 text-white font-black uppercase tracking-widest text-xs py-5 rounded-[1.5rem] hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-200 flex items-center justify-center gap-3"
                 >
-                  Save Log
+                  Save Full Week <CheckCircle2 size={18} />
                 </button>
               </div>
             </form>

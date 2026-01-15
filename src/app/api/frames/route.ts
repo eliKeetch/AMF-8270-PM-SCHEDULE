@@ -16,17 +16,34 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const log = await request.json() as FrameLog;
-    db.prepare(`
-      INSERT INTO frame_logs (id, date, frameCount, notes)
-      VALUES (?, ?, ?, ?)
-    `).run(
-      log.id,
-      log.date,
-      log.frameCount,
-      log.notes || null
-    );
+    
+    // Check if entry for this date already exists
+    const existing = db.prepare('SELECT id FROM frame_logs WHERE date = ?').get(log.date) as { id: string } | undefined;
+    
+    if (existing) {
+      db.prepare(`
+        UPDATE frame_logs 
+        SET frameCount = ?, notes = ?
+        WHERE date = ?
+      `).run(
+        log.frameCount,
+        log.notes || null,
+        log.date
+      );
+    } else {
+      db.prepare(`
+        INSERT INTO frame_logs (id, date, frameCount, notes)
+        VALUES (?, ?, ?, ?)
+      `).run(
+        log.id,
+        log.date,
+        log.frameCount,
+        log.notes || null
+      );
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('API Frames POST error:', error);
     return NextResponse.json({ error: 'Failed to log frames' }, { status: 500 });
   }
 }

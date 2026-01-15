@@ -40,7 +40,10 @@ export const FrameProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       notes,
     };
     
-    setFrameLogs(prev => [newLog, ...prev].sort((a, b) => b.date.localeCompare(a.date)));
+    setFrameLogs(prev => {
+      const filtered = prev.filter(l => l.date !== date);
+      return [newLog, ...filtered].sort((a, b) => b.date.localeCompare(a.date));
+    });
     
     try {
       await fetch('/api/frames', {
