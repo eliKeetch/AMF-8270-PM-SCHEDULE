@@ -29,7 +29,7 @@ export const MachineGrid: React.FC = () => {
           border: 'border-green-200 dark:border-green-800/50',
           text: 'text-green-700 dark:text-green-400',
           icon: <CheckCircle2 size={16} className="text-green-500" />,
-          label: 'Operational'
+          label: 'Up'
         };
       case 'maintenance':
         return {
@@ -45,7 +45,7 @@ export const MachineGrid: React.FC = () => {
           border: 'border-red-200 dark:border-red-800/50',
           text: 'text-red-700 dark:text-red-400',
           icon: <AlertCircle size={16} className="text-red-500" />,
-          label: 'Down'
+          label: 'Parked'
         };
       case 'permanently_down':
         return {
@@ -103,13 +103,13 @@ export const MachineGrid: React.FC = () => {
                   onClick={() => handleUpdatePairStatus(pair, 'active')}
                   className="text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-100 dark:border-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/30 transition-all active:scale-95 shadow-sm shadow-black/5 dark:shadow-none"
                 >
-                  Set Open
+                  Unpark Pair
                 </button>
                 <button 
                   onClick={() => handleUpdatePairStatus(pair, 'down')}
                   className="text-xs font-black uppercase tracking-wider px-4 py-2 rounded-xl bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 border border-red-100 dark:border-red-900/30 hover:bg-red-100 dark:hover:bg-red-900/30 transition-all active:scale-95 shadow-sm shadow-black/5 dark:shadow-none"
                 >
-                  Shut Down
+                  Park Pair
                 </button>
               </div>
             </div>
@@ -145,9 +145,9 @@ export const MachineGrid: React.FC = () => {
                               onChange={(e) => updateMachineStatus(machine.id, e.target.value as MachineStatus)}
                               className="w-full bg-gray-50/50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500/20 appearance-none cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
                             >
-                              <option value="active">Operational</option>
+                              <option value="active">Up</option>
                               <option value="maintenance">Service</option>
-                              <option value="down">Out of Order</option>
+                              <option value="down">Parked</option>
                               <option value="permanently_down">Parts Machine</option>
                             </select>
                             <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400" />

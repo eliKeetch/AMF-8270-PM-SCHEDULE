@@ -15,6 +15,7 @@ import {
   PlusCircle,
   MoreHorizontal,
   Plus,
+  Minus,
   TriangleAlert
 } from 'lucide-react';
 import { BowlingPin } from './Icons';
@@ -127,13 +128,13 @@ export const FrontDeskPortal: React.FC = () => {
                   onClick={() => handleUpdatePairStatus(pair, 'active')}
                   className="bg-white dark:bg-slate-800 border-2 border-green-100 dark:border-green-900/30 text-green-600 dark:text-green-400 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-green-500 dark:hover:bg-green-600 hover:text-white transition-all shadow-sm active:scale-95 whitespace-nowrap"
                 >
-                  Open
+                  Unpark Pair
                 </button>
                 <button 
                   onClick={() => handleUpdatePairStatus(pair, 'down')}
-                  className="bg-white dark:bg-slate-800 border-2 border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-red-500 dark:hover:bg-red-600 hover:text-white transition-all shadow-sm active:scale-95 whitespace-nowrap"
+                  className="bg-white dark:bg-slate-800 border-2 border-red-100 dark:border-red-900/30 text-red-600 dark:text-red-400 px-3 py-1.5 rounded-xl text-[8px] font-black uppercase tracking-widest hover:bg-red-500/90 dark:hover:bg-red-500/90 hover:text-white transition-all shadow-sm active:scale-95 whitespace-nowrap"
                 >
-                  Close
+                  Park Pair
                 </button>
               </div>
             </div>
@@ -159,13 +160,13 @@ export const FrontDeskPortal: React.FC = () => {
                       <div className="flex flex-col gap-2 items-end">
                         <button
                           onClick={() => setStopModal({ machineId: machine.id, number: machine.number })}
-                          className="bg-red-600 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-lg shadow-black/10 dark:shadow-red-900/20 flex items-center gap-1.5"
+                          className="bg-red-500/90 text-white px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 transition-all shadow-lg shadow-black/10 dark:shadow-red-900/20 flex items-center gap-1.5"
                         >
                           <TriangleAlert size={14} />
                           ADD STOP
                         </button>
                         {activeIssues.length > 0 && (
-                          <div className="bg-slate-900 dark:bg-red-600 text-white w-9 h-9 rounded-xl flex items-center justify-center font-black animate-pulse shadow-xl shadow-black/20 dark:shadow-none text-base">
+                          <div className="bg-slate-900 dark:bg-red-500/90 text-white w-9 h-9 rounded-xl flex items-center justify-center font-black animate-pulse shadow-xl shadow-black/20 dark:shadow-none text-base">
                             {activeIssues.length}
                           </div>
                         )}
@@ -189,20 +190,21 @@ export const FrontDeskPortal: React.FC = () => {
                     </div>
 
                     <div className="mt-6 pt-6 border-t-2 border-dashed border-gray-100 dark:border-slate-800">
-                      <div className="flex gap-3">
-                        <button
-                          onClick={() => updateMachineStatus(machine.id, 'active')}
-                          className={`flex-1 py-3 rounded-xl text-[12px] font-black uppercase tracking-[0.1em] border-2 transition-all ${machine.number.toString().length > 2 ? 'px-1' : ''} ${machine.status === 'active' ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-100 dark:shadow-green-900/40' : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-slate-700 text-gray-400 dark:text-gray-500 hover:border-green-200 dark:hover:border-green-500 hover:text-green-500 dark:hover:text-green-400'}`}
-                        >
-                          Unparked
-                        </button>
+                      {machine.status === 'active' ? (
                         <button
                           onClick={() => updateMachineStatus(machine.id, 'down')}
-                          className={`flex-1 py-3 rounded-xl text-[12px] font-black uppercase tracking-[0.1em] border-2 transition-all ${machine.number.toString().length > 2 ? 'px-1' : ''} ${machine.status === 'down' ? 'bg-red-500 border-red-500 text-white shadow-lg shadow-red-100 dark:shadow-red-900/40' : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-slate-700 text-gray-400 dark:text-gray-500 hover:border-red-200 dark:hover:border-red-500 hover:text-red-500 dark:hover:text-red-400'}`}
+                          className="w-full py-4 rounded-2xl text-[14px] font-black uppercase tracking-[0.2em] bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all active:scale-95 flex items-center justify-center gap-2"
                         >
-                          Parked
+                          <Minus size={18} /> Park Machine
                         </button>
-                      </div>
+                      ) : (
+                        <button
+                          onClick={() => updateMachineStatus(machine.id, 'active')}
+                          className="w-full py-4 rounded-2xl text-[14px] font-black uppercase tracking-[0.2em] bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-all active:scale-95 flex items-center justify-center gap-2"
+                        >
+                          <Plus size={18} /> Unpark Machine
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -225,7 +227,7 @@ export const FrontDeskPortal: React.FC = () => {
             </button>
             
             <div className="text-center mb-10">
-              <div className="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-red-200 dark:border-red-800">
+              <div className="bg-red-50 dark:bg-red-900/20 text-red-500 dark:text-red-400 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 border border-red-100 dark:border-red-800/50">
                 <TriangleAlert size={40} />
               </div>
               <h3 className="text-3xl font-black text-slate-900 dark:text-white uppercase tracking-tighter">Record Stop</h3>
