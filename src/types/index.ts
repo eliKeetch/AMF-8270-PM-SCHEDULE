@@ -124,3 +124,25 @@ export interface InventoryLog {
   technicianName: string;
   timestamp: string;
 }
+
+export interface RepairPartRequirement {
+  partNumber: string;
+  quantity: number;
+  name: string;
+}
+
+export interface RepairManualRef {
+  file: 'service' | 'parts' | 'lubrication';
+  page: number;
+  title?: string;
+}
+
+export interface RepairDefinition {
+  id: string;
+  name: string;
+  category: InventoryCategory;
+  description: string;
+  requiredParts: RepairPartRequirement[];
+  instructionRef?: RepairManualRef;
+  assemblyRef: RepairManualRef;
+}

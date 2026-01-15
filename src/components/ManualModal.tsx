@@ -7,7 +7,7 @@ import { PMTask } from '@/types';
 interface ManualModalProps {
   task?: PMTask;
   initialPage?: number;
-  manualType?: 'lubrication' | 'service';
+  manualType?: 'lubrication' | 'service' | 'parts';
   title?: string;
   onClose: () => void;
 }
@@ -20,9 +20,19 @@ export const ManualModal: React.FC<ManualModalProps> = ({ task, initialPage, man
   const displayPage = initialPage || task?.pdfRef?.page || 1;
   const displayManual = manualType || task?.pdfRef?.file || 'service';
 
-  const pdfPath = displayManual === 'lubrication' 
-    ? `/files/AMF8270LubricationManual.pdf#page=${displayPage}&navpanes=0&view=Fit`
-    : `/files/8270parts.pdf#page=${displayPage}&navpanes=0&view=Fit`;
+  const getPdfPath = () => {
+    switch (displayManual) {
+      case 'lubrication':
+        return `/files/AMF8270LubricationManual.pdf#page=${displayPage}&navpanes=0&view=Fit`;
+      case 'parts':
+        return `/files/8270parts.pdf#page=${displayPage}&navpanes=0&view=Fit`;
+      case 'service':
+      default:
+        return `/files/8270-service-parts-manual.pdf#page=${displayPage}&navpanes=0&view=Fit`;
+    }
+  };
+
+  const pdfPath = getPdfPath();
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
@@ -75,7 +85,11 @@ export const ManualModal: React.FC<ManualModalProps> = ({ task, initialPage, man
                   <span className="text-xs font-black uppercase tracking-tight dark:text-white">Manual Source</span>
                 </div>
                 <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 leading-tight">
-                  {displayManual === 'lubrication' ? 'AMF 82-70 Lubrication Manual' : 'AMF 82-70 Service & Parts Manual'}
+                  {displayManual === 'lubrication' 
+                    ? 'AMF 82-70 Lubrication Manual' 
+                    : displayManual === 'parts'
+                      ? 'AMF 82-70 Parts Manual'
+                      : 'AMF 82-70 Service & Parts Manual'}
                 </p>
               </div>
               

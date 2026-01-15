@@ -57,13 +57,37 @@ export const FrontDeskPortal: React.FC = () => {
   const getStatusUI = (status: MachineStatus) => {
     switch (status) {
       case 'active':
-        return { bg: 'bg-green-50 dark:bg-green-900/10', border: 'border-green-200 dark:border-green-800/50', icon: <CheckCircle2 size={16} className="text-green-500" />, label: 'UP' };
+        return { 
+          bg: 'bg-green-50 dark:bg-green-900/10', 
+          border: 'border-green-200 dark:border-green-800/50', 
+          text: 'text-green-700 dark:text-green-400',
+          icon: <CheckCircle2 size={16} className="text-green-500" />, 
+          label: 'Unparked' 
+        };
       case 'maintenance':
-        return { bg: 'bg-yellow-50 dark:bg-yellow-900/10', border: 'border-yellow-200 dark:border-yellow-800/50', icon: <Clock size={16} className="text-yellow-500" />, label: 'Service' };
+        return { 
+          bg: 'bg-yellow-50 dark:bg-yellow-900/10', 
+          border: 'border-yellow-200 dark:border-yellow-800/50', 
+          text: 'text-yellow-700 dark:text-yellow-400',
+          icon: <Clock size={16} className="text-yellow-500" />, 
+          label: 'Service' 
+        };
       case 'down':
-        return { bg: 'bg-red-50 dark:bg-red-900/10', border: 'border-red-200 dark:border-red-800/50', icon: <XCircle size={16} className="text-red-500" />, label: 'DOWN' };
+        return { 
+          bg: 'bg-red-50 dark:bg-red-900/10', 
+          border: 'border-red-200 dark:border-red-800/50', 
+          text: 'text-red-700 dark:text-red-400',
+          icon: <XCircle size={16} className="text-red-500" />, 
+          label: 'Parked' 
+        };
       case 'permanently_down':
-        return { bg: 'bg-gray-100 dark:bg-slate-800', border: 'border-gray-200 dark:border-slate-700', icon: <AlertCircle size={16} className="text-gray-400" />, label: 'Offline' };
+        return { 
+          bg: 'bg-gray-100 dark:bg-slate-800', 
+          border: 'border-gray-200 dark:border-slate-700', 
+          text: 'text-gray-500 dark:text-gray-400',
+          icon: <AlertCircle size={16} className="text-gray-400" />, 
+          label: 'Offline' 
+        };
     }
   };
 
@@ -127,7 +151,7 @@ export const FrontDeskPortal: React.FC = () => {
                     <div className="flex justify-between items-center mb-6">
                       <div>
                         <span className="text-5xl font-black text-gray-900 dark:text-white tracking-tighter leading-none">#{machine.number}</span>
-                        <div className={`mt-2 flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${ui.bg} border-2 ${ui.border} whitespace-nowrap`}>
+                        <div className={`mt-2 flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${ui.bg} ${ui.text} border-2 ${ui.border} whitespace-nowrap`}>
                           {ui.icon}
                           {ui.label}
                         </div>
@@ -168,15 +192,15 @@ export const FrontDeskPortal: React.FC = () => {
                       <div className="flex gap-3">
                         <button
                           onClick={() => updateMachineStatus(machine.id, 'active')}
-                          className={`flex-1 py-3 rounded-xl text-[12px] font-black uppercase tracking-[0.1em] border-2 transition-all ${machine.number.toString().length > 2 ? 'px-1' : ''} ${machine.status === 'active' ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-100 dark:shadow-green-900/40' : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-slate-700 text-gray-300 dark:text-gray-600 hover:border-green-200 dark:hover:border-green-500 hover:text-green-500 dark:hover:text-green-400'}`}
+                          className={`flex-1 py-3 rounded-xl text-[12px] font-black uppercase tracking-[0.1em] border-2 transition-all ${machine.number.toString().length > 2 ? 'px-1' : ''} ${machine.status === 'active' ? 'bg-green-500 border-green-500 text-white shadow-lg shadow-green-100 dark:shadow-green-900/40' : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-slate-700 text-gray-400 dark:text-gray-500 hover:border-green-200 dark:hover:border-green-500 hover:text-green-500 dark:hover:text-green-400'}`}
                         >
-                          UP
+                          Unparked
                         </button>
                         <button
                           onClick={() => updateMachineStatus(machine.id, 'down')}
-                          className={`flex-1 py-3 rounded-xl text-[12px] font-black uppercase tracking-[0.1em] border-2 transition-all ${machine.number.toString().length > 2 ? 'px-1' : ''} ${machine.status === 'down' ? 'bg-red-500 border-red-500 text-white shadow-lg shadow-red-100 dark:shadow-red-900/40' : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-slate-700 text-gray-300 dark:text-gray-600 hover:border-red-200 dark:hover:border-red-500 hover:text-red-500 dark:hover:text-red-400'}`}
+                          className={`flex-1 py-3 rounded-xl text-[12px] font-black uppercase tracking-[0.1em] border-2 transition-all ${machine.number.toString().length > 2 ? 'px-1' : ''} ${machine.status === 'down' ? 'bg-red-500 border-red-500 text-white shadow-lg shadow-red-100 dark:shadow-red-900/40' : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-slate-700 text-gray-400 dark:text-gray-500 hover:border-red-200 dark:hover:border-red-500 hover:text-red-500 dark:hover:text-red-400'}`}
                         >
-                          DOWN
+                          Parked
                         </button>
                       </div>
                     </div>

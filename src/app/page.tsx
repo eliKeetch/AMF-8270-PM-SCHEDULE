@@ -14,6 +14,7 @@ import { LoginView } from '@/components/LoginView';
 import { UserManagement } from '@/components/UserManagement';
 import { AccountView } from '@/components/AccountView';
 import { InventoryView } from '@/components/InventoryView';
+import { RepairsView } from '@/components/RepairsView';
 import { useSchedule } from '@/hooks/useSchedule';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { User, UserRole } from '@/types';
@@ -30,11 +31,12 @@ import {
   LogOut,
   Users as UsersIcon,
   ShieldCheck,
-  Package
+  Package,
+  Wrench
 } from 'lucide-react';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'status' | 'schedule' | 'summary' | 'planner' | 'settings' | 'front_desk' | 'intelligence' | 'users' | 'account' | 'inventory'>('status');
+  const [activeTab, setActiveTab] = useState<'status' | 'schedule' | 'summary' | 'planner' | 'settings' | 'front_desk' | 'intelligence' | 'users' | 'account' | 'inventory' | 'repairs'>('status');
   const [activePersona, setActivePersona] = useState<'mechanic' | 'front_desk' | 'manager' | 'admin'>('mechanic');
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
   const [currentUser, setCurrentUser, isUserLoaded] = useLocalStorage<User | null>('pinsetter-session', null);
@@ -55,6 +57,7 @@ export default function Home() {
       label: 'Mechanic',
       tabs: [
         { id: 'status', label: 'Pinsetters', icon: LayoutDashboard },
+        { id: 'repairs', label: 'Repairs', icon: Wrench },
         { id: 'schedule', label: 'PM Tracker', icon: ClipboardList },
         { id: 'planner', label: 'Month Planner', icon: CalendarIcon },
         { id: 'inventory', label: 'Inventory', icon: Package },
@@ -75,6 +78,7 @@ export default function Home() {
       tabs: [
         { id: 'intelligence', label: 'Intelligence', icon: BrainCircuit },
         { id: 'inventory', label: 'Inventory', icon: Package },
+        { id: 'repairs', label: 'Repairs', icon: Wrench },
         { id: 'summary', label: 'Performance', icon: BarChart3 },
         { id: 'settings', label: 'Settings', icon: Settings },
         { id: 'account', label: 'My Account', icon: UsersIcon },
@@ -228,9 +232,9 @@ export default function Home() {
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           {/* Main Content Area */}
-          <div className={`${activeTab === 'front_desk' || activeTab === 'intelligence' || activeTab === 'users' || activeTab === 'account' || activeTab === 'inventory' ? 'lg:col-span-12' : 'lg:col-span-8'} space-y-8`}>
+          <div className={`${activeTab === 'front_desk' || activeTab === 'intelligence' || activeTab === 'users' || activeTab === 'account' || activeTab === 'inventory' || activeTab === 'repairs' ? 'lg:col-span-12' : 'lg:col-span-8'} space-y-8`}>
             {/* Quick Stats / Welcome */}
-            {(activeTab !== 'front_desk' && activeTab !== 'intelligence' && activeTab !== 'users' && activeTab !== 'account' && activeTab !== 'inventory') && (
+            {(activeTab !== 'front_desk' && activeTab !== 'intelligence' && activeTab !== 'users' && activeTab !== 'account' && activeTab !== 'inventory' && activeTab !== 'repairs') && (
               <div className="bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-gray-100 dark:border-slate-800 shadow-sm relative overflow-hidden group">
                 <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
                   <Zap size={120} className="text-blue-600 dark:text-blue-400" />
@@ -277,6 +281,7 @@ export default function Home() {
               )}
               {activeTab === 'summary' && <MonthlySummary />}
               {activeTab === 'inventory' && <InventoryView />}
+              {activeTab === 'repairs' && <RepairsView />}
               {activeTab === 'settings' && <SettingsView />}
               {activeTab === 'users' && <UserManagement />}
               {activeTab === 'account' && currentUser && (
@@ -289,7 +294,7 @@ export default function Home() {
           </div>
 
           {/* Sidebar Area */}
-          {(activeTab !== 'front_desk' && activeTab !== 'intelligence' && activeTab !== 'users' && activeTab !== 'inventory') && (
+          {(activeTab !== 'front_desk' && activeTab !== 'intelligence' && activeTab !== 'users' && activeTab !== 'inventory' && activeTab !== 'repairs') && (
             <div className="lg:col-span-4 space-y-8">
               <TodayTasks />
               
