@@ -5,17 +5,24 @@ import { X, FileText, ExternalLink, Droplets, Disc, Maximize2, Minimize2 } from 
 import { PMTask } from '@/types';
 
 interface ManualModalProps {
-  task: PMTask;
+  task?: PMTask;
+  initialPage?: number;
+  manualType?: 'lubrication' | 'service';
+  title?: string;
   onClose: () => void;
 }
 
-export const ManualModal: React.FC<ManualModalProps> = ({ task, onClose }) => {
+export const ManualModal: React.FC<ManualModalProps> = ({ task, initialPage, manualType, title, onClose }) => {
   const [isMaximized, setIsMaximized] = useState(false);
-  const isOil = task.method === 'oil';
+  const isOil = task?.method === 'oil';
   
-  const pdfPath = task.pdfRef?.file === 'lubrication' 
-    ? `/files/AMF8270LubricationManual.pdf#page=${task.pdfRef.page}&navpanes=0&view=Fit`
-    : `/files/8270-service-parts-manual.pdf#page=${task.pdfRef?.page || 1}&navpanes=0&view=Fit`;
+  const displayTitle = title || task?.name || 'Manual';
+  const displayPage = initialPage || task?.pdfRef?.page || 1;
+  const displayManual = manualType || task?.pdfRef?.file || 'service';
+
+  const pdfPath = displayManual === 'lubrication' 
+    ? `/files/AMF8270LubricationManual.pdf#page=${displayPage}&navpanes=0&view=Fit`
+    : `/files/8270-service-parts-manual.pdf#page=${displayPage}&navpanes=0&view=Fit`;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-md">
@@ -29,9 +36,9 @@ export const ManualModal: React.FC<ManualModalProps> = ({ task, onClose }) => {
               {isOil ? <Droplets size={20} /> : <Disc size={20} />}
             </div>
             <div>
-              <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">{task.name}</h3>
+              <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight">{displayTitle}</h3>
               <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 uppercase tracking-widest">
-                {task.method === 'oil' ? 'Oil (Circle)' : 'Grease (Square)'} • Page {task.pdfRef?.page}
+                {task ? (task.method === 'oil' ? 'Oil (Circle)' : 'Grease (Square)') : 'Manual View'} • Page {displayPage}
               </p>
             </div>
           </div>
@@ -51,10 +58,13 @@ export const ManualModal: React.FC<ManualModalProps> = ({ task, onClose }) => {
         <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
           {/* Instructions Sidebar */}
           <div className="w-full md:w-80 p-6 bg-gray-50 dark:bg-slate-800 border-r border-gray-100 dark:border-slate-700 overflow-y-auto shrink-0">
-            <h4 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-4">Maintenance Instructions</h4>
+            <h4 className="text-[10px] font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-4">Instructions</h4>
             <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-gray-100 dark:border-slate-700 shadow-sm mb-6">
               <p className="text-sm text-gray-600 dark:text-gray-400 font-medium leading-relaxed italic">
-                "Locate the component on page {task.pdfRef?.page}. Clean all old {task.method} from the surface before applying fresh lubricant. Ensure even coverage to prevent binding."
+                {task 
+                  ? `Locate the component on page ${displayPage}. Clean all old ${task.method} from the surface before applying fresh lubricant. Ensure even coverage to prevent binding.`
+                  : `Refer to page ${displayPage} for part diagrams and part numbers. Cross-reference with the master list if needed.`
+                }
               </p>
             </div>
 
@@ -65,7 +75,7 @@ export const ManualModal: React.FC<ManualModalProps> = ({ task, onClose }) => {
                   <span className="text-xs font-black uppercase tracking-tight dark:text-white">Manual Source</span>
                 </div>
                 <p className="text-[10px] font-bold text-gray-500 dark:text-gray-400 leading-tight">
-                  {task.pdfRef?.file === 'lubrication' ? 'AMF 82-70 Lubrication Manual' : 'AMF 82-70 Service & Parts Manual'}
+                  {displayManual === 'lubrication' ? 'AMF 82-70 Lubrication Manual' : 'AMF 82-70 Service & Parts Manual'}
                 </p>
               </div>
               

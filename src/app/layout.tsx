@@ -8,6 +8,7 @@ import { IssueProvider } from "@/hooks/IssueContext";
 import { UserProvider } from "@/hooks/UserContext";
 import { FrameProvider } from "@/hooks/FrameContext";
 import { ThemeProvider } from "@/hooks/ThemeContext";
+import { InventoryProvider } from "@/hooks/InventoryContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,7 +43,9 @@ export default function RootLayout({
                 <FrameProvider>
                   <MaintenanceProvider>
                     <ScheduleProvider>
-                      {children}
+                      <InventoryProvider>
+                        {children}
+                      </InventoryProvider>
                     </ScheduleProvider>
                   </MaintenanceProvider>
                 </FrameProvider>

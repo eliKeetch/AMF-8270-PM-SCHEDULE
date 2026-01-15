@@ -13,6 +13,7 @@ import { IssueSummary } from '@/components/IssueSummary';
 import { LoginView } from '@/components/LoginView';
 import { UserManagement } from '@/components/UserManagement';
 import { AccountView } from '@/components/AccountView';
+import { InventoryView } from '@/components/InventoryView';
 import { useSchedule } from '@/hooks/useSchedule';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { User, UserRole } from '@/types';
@@ -28,11 +29,12 @@ import {
   BrainCircuit,
   LogOut,
   Users as UsersIcon,
-  ShieldCheck
+  ShieldCheck,
+  Package
 } from 'lucide-react';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<'status' | 'schedule' | 'summary' | 'planner' | 'settings' | 'front_desk' | 'intelligence' | 'users' | 'account'>('status');
+  const [activeTab, setActiveTab] = useState<'status' | 'schedule' | 'summary' | 'planner' | 'settings' | 'front_desk' | 'intelligence' | 'users' | 'account' | 'inventory'>('status');
   const [activePersona, setActivePersona] = useState<'mechanic' | 'front_desk' | 'manager' | 'admin'>('mechanic');
   const [selectedMachineId, setSelectedMachineId] = useState<string | null>(null);
   const [currentUser, setCurrentUser, isUserLoaded] = useLocalStorage<User | null>('pinsetter-session', null);
@@ -55,6 +57,7 @@ export default function Home() {
         { id: 'status', label: 'Pinsetters', icon: LayoutDashboard },
         { id: 'schedule', label: 'PM Tracker', icon: ClipboardList },
         { id: 'planner', label: 'Month Planner', icon: CalendarIcon },
+        { id: 'inventory', label: 'Inventory', icon: Package },
         { id: 'account', label: 'My Account', icon: UsersIcon },
       ],
       color: 'blue'
@@ -71,6 +74,7 @@ export default function Home() {
       label: 'Management',
       tabs: [
         { id: 'intelligence', label: 'Intelligence', icon: BrainCircuit },
+        { id: 'inventory', label: 'Inventory', icon: Package },
         { id: 'summary', label: 'Performance', icon: BarChart3 },
         { id: 'settings', label: 'Settings', icon: Settings },
         { id: 'account', label: 'My Account', icon: UsersIcon },
@@ -272,6 +276,7 @@ export default function Home() {
                 />
               )}
               {activeTab === 'summary' && <MonthlySummary />}
+              {activeTab === 'inventory' && <InventoryView />}
               {activeTab === 'settings' && <SettingsView />}
               {activeTab === 'users' && <UserManagement />}
               {activeTab === 'account' && currentUser && (

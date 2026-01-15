@@ -81,6 +81,27 @@ db.exec(`
     frameCount INTEGER NOT NULL,
     notes TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS inventory (
+    id TEXT PRIMARY KEY,
+    partNumber TEXT UNIQUE,
+    name TEXT NOT NULL,
+    category TEXT NOT NULL,
+    quantity INTEGER DEFAULT 0,
+    minQuantity INTEGER DEFAULT 5,
+    location TEXT,
+    pdfPage INTEGER
+  );
+
+  CREATE TABLE IF NOT EXISTS inventory_logs (
+    id TEXT PRIMARY KEY,
+    itemId TEXT NOT NULL,
+    change INTEGER NOT NULL,
+    reason TEXT,
+    technicianName TEXT,
+    timestamp TEXT NOT NULL,
+    FOREIGN KEY (itemId) REFERENCES inventory(id)
+  );
 `);
 
 // Add machine_issues table columns if they don't exist (Migration)
@@ -185,6 +206,25 @@ if (settingsCount.count === 0) {
     DEFAULT_SETTINGS.spreadMethod,
     DEFAULT_SETTINGS.issueThresholds
   );
+}
+
+// Initial inventory data
+const inventoryCount = db.prepare('SELECT COUNT(*) as count FROM inventory').get() as { count: number };
+if (inventoryCount.count === 0) {
+  const INITIAL_INVENTORY = [
+    { id: 'inv-1', partNumber: '070-006-123', name: 'Distributor Pinion', category: 'Distributor', quantity: 10, minQuantity: 2, pdfPage: 14 },
+    { id: 'inv-2', partNumber: '000-024-654', name: 'Belt Tensioner Oilite', category: 'Consumables', quantity: 25, minQuantity: 5, pdfPage: 15 },
+    { id: 'inv-3', partNumber: '090-004-111', name: 'Table Conn. Rod Bushing', category: 'Drive', quantity: 8, minQuantity: 2, pdfPage: 6 },
+    { id: 'inv-4', partNumber: '612-070-022', name: 'Sweep Cam Switch', category: 'Electrical', quantity: 4, minQuantity: 1, pdfPage: 553 },
+  ];
+
+  const insertItem = db.prepare('INSERT INTO inventory (id, partNumber, name, category, quantity, minQuantity, pdfPage) VALUES (?, ?, ?, ?, ?, ?, ?)');
+  const transaction = db.transaction((items) => {
+    for (const item of items) {
+      insertItem.run(item.id, item.partNumber, item.name, item.category, item.quantity, item.minQuantity, item.pdfPage);
+    }
+  });
+  transaction(INITIAL_INVENTORY);
 }
 
 export default db;

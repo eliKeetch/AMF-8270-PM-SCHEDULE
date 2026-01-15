@@ -101,3 +101,25 @@ export interface PMTask {
     page: number;
   };
 }
+
+export type InventoryCategory = 'Electrical' | 'Ball Lift' | 'Cushion' | 'Drive' | 'Distributor' | 'Consumables' | 'Other';
+
+export interface InventoryItem {
+  id: string;
+  partNumber: string;
+  name: string;
+  category: InventoryCategory;
+  quantity: number;
+  minQuantity: number;
+  location?: string;
+  pdfPage?: number;
+}
+
+export interface InventoryLog {
+  id: string;
+  itemId: string;
+  change: number;
+  reason: string;
+  technicianName: string;
+  timestamp: string;
+}
